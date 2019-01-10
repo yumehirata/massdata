@@ -1,6 +1,5 @@
 package jp.co.rakus.repository;
 
-
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,7 +79,7 @@ public class ItemRepository {
 	/**
 	 * Itemsテーブルのidの最大値を求める.
 	 * 
-	 * @return	最大値
+	 * @return 最大値
 	 */
 	public Integer findMaxId() {
 		String sql = "SELECT MAX(id) FROM items";
@@ -89,7 +88,6 @@ public class ItemRepository {
 		return maxId;
 	}
 
-	
 	/**
 	 * Itemsテーブルにインサートする.
 	 * 
@@ -150,7 +148,6 @@ public class ItemRepository {
 		return itemList;
 	}
 
-	
 	/**
 	 * IDでItemを検索する.
 	 * 
@@ -165,7 +162,7 @@ public class ItemRepository {
 		List<Item> itemList = template.query(sql, param, ITEM_ROW_MAPPER);
 		return itemList.get(0);
 	}
-	
+
 	/**
 	 * IDでカテゴリを持つItemを検索する.
 	 * 
@@ -224,24 +221,26 @@ public class ItemRepository {
 	 */
 	public List<Item> findByNameAndBrand(String name, String brand, Integer beginNumber) {
 
-		String sql = "select id,name,condition,category,brand,price,shipping,description " + "FROM items "
-				+ "WHERE name ILIKE :name AND brand ILIKE :brand " + "ORDER BY id " + "OFFSET :beginNumber LIMIT 30";
-		SqlParameterSource param = new MapSqlParameterSource().addValue("name", "%" + name + "%")
-				.addValue("brand", "%" + brand + "%").addValue("beginNumber", beginNumber);
+		StringBuilder sqlStr = new StringBuilder();
+		SqlParameterSource param;
+		sqlStr.append("SELECT id,name,condition,category,brand,price,shipping,description FROM items ");
 
 		if (name == null || name.equals("")) {
-			sql = "select id ,name ,condition,category,brand,price,shipping,description " + "FROM items "
-					+ "WHERE brand ILIKE :brand " + "ORDER BY id " + "OFFSET :beginNumber LIMIT 30";
+			sqlStr.append("WHERE brand ILIKE :brand ");
 			param = new MapSqlParameterSource().addValue("brand", "%" + brand + "%").addValue("beginNumber",
 					beginNumber);
-
 		} else if (brand == null || brand.equals("")) {
-			sql = "select id,name,condition,category,brand,price,shipping,description " + "FROM items "
-					+ "WHERE name ILIKE :name " + "ORDER BY id " + "OFFSET :beginNumber LIMIT 30";
+			sqlStr.append("WHERE name ILIKE :name ");
 			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("beginNumber", beginNumber);
+		} else {
+			sqlStr.append("WHERE name ILIKE :name AND brand ILIKE :brand ");
+			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("brand", "%" + brand + "%")
+					.addValue("beginNumber", beginNumber);
 		}
 
-		List<Item> itemList = template.query(sql, param, ITEM_ROW_MAPPER);
+		sqlStr.append(" ORDER BY id OFFSET :beginNumber LIMIT 30");
+
+		List<Item> itemList = template.query(sqlStr.toString(), param, ITEM_ROW_MAPPER);
 		return itemList;
 	}
 
@@ -249,7 +248,7 @@ public class ItemRepository {
 	 * アイテム名、カテゴリ、ブランド名検索のアイテム数取得.
 	 * 
 	 * @param name
-	 *            検索キーとなるアイテム
+	 *            検索キーとなるアイテム名
 	 * @param category
 	 *            検索キーとなるカテゴリ
 	 * @param brand
@@ -270,7 +269,6 @@ public class ItemRepository {
 		} else if (brand == null || brand.equals("")) {
 			sql = "SELECT COUNT(*) FROM items WHERE name ILIKE :name AND category = :category";
 			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category);
-
 		}
 
 		Integer itemNum = template.queryForObject(sql, param, Integer.class);
@@ -290,55 +288,38 @@ public class ItemRepository {
 	 */
 	public List<Item> findByNameAndCategoryAndBrand(String name, Integer category, String brand, Integer beginNumber) {
 
-		String sql = "select i.id item_id,i.name item_name,condition,category,brand,price,shipping,description,"
+		StringBuilder sqlStr = new StringBuilder();
+		sqlStr.append("SELECT i.id item_id,i.name item_name,condition,category,brand,price,shipping,description,"
 				+ "sc.id sc_id,sc.name sc_name,sc.parent sc_parent,sc.name_all sc_name_all, "
 				+ "mc.id mc_id,mc.name mc_name,mc.parent mc_parent," + "lc.id lc_id,lc.name lc_name " + "FROM items i "
 				+ "LEFT OUTER JOIN category sc ON category = sc.id "
 				+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
-				+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id "
-				+ "WHERE i.name ILIKE :name AND category = :category AND i.brand ILIKE :brand " + "ORDER BY i.id "
-				+ "OFFSET :beginNumber LIMIT 30";
-		SqlParameterSource param = new MapSqlParameterSource().addValue("name", "%" + name + "%")
-				.addValue("category", category).addValue("brand", "%" + brand + "%")
-				.addValue("beginNumber", beginNumber);
+				+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id ");
+		SqlParameterSource param;
 
 		if ((name == null && brand == null) || (name.equals("") && brand.equals(""))) {
-			sql = "select i.id item_id,i.name item_name,condition,category,brand,price,shipping,description,"
-					+ "sc.id sc_id,sc.name sc_name,sc.parent sc_parent,sc.name_all sc_name_all, "
-					+ "mc.id mc_id,mc.name mc_name,mc.parent mc_parent," + "lc.id lc_id,lc.name lc_name "
-					+ "FROM items i " + "LEFT OUTER JOIN category sc ON category = sc.id "
-					+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
-					+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id " + "WHERE category = :category "
-					+ "ORDER BY i.id " + "OFFSET :beginNumber LIMIT 30";
+			sqlStr.append("WHERE category = :category ");
 			param = new MapSqlParameterSource().addValue("category", category).addValue("beginNumber", beginNumber);
 
 		} else if (name == null || name.equals("")) {
-			sql = "select i.id item_id,i.name item_name,condition,category,brand,price,shipping,description,"
-					+ "sc.id sc_id,sc.name sc_name,sc.parent sc_parent,sc.name_all sc_name_all, "
-					+ "mc.id mc_id,mc.name mc_name,mc.parent mc_parent," + "lc.id lc_id,lc.name lc_name "
-					+ "FROM items i " + "LEFT OUTER JOIN category sc ON category = sc.id "
-					+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
-					+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id "
-					+ "category = :category AND i.brand ILIKE :brand " + "ORDER BY i.id "
-					+ "OFFSET :beginNumber LIMIT 30";
+			sqlStr.append("WHERE category = :category AND i.brand ILIKE :brand ");
 			param = new MapSqlParameterSource().addValue("category", category).addValue("brand", "%" + brand + "%")
 					.addValue("beginNumber", beginNumber);
 
 		} else if (brand == null || brand.equals("")) {
-			sql = "select i.id item_id,i.name item_name,condition,category,brand,price,shipping,description,"
-					+ "sc.id sc_id,sc.name sc_name,sc.parent sc_parent,sc.name_all sc_name_all, "
-					+ "mc.id mc_id,mc.name mc_name,mc.parent mc_parent," + "lc.id lc_id,lc.name lc_name "
-					+ "FROM items i " + "LEFT OUTER JOIN category sc ON category = sc.id "
-					+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
-					+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id "
-					+ "WHERE i.name ILIKE :name AND category = :category " + "ORDER BY i.id "
-					+ "OFFSET :beginNumber LIMIT 30";
+			sqlStr.append("WHERE i.name ILIKE :name AND category = :category ");
 			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category)
 					.addValue("beginNumber", beginNumber);
 
+		} else {
+			sqlStr.append("WHERE i.name ILIKE :name AND category = :category AND i.brand ILIKE :brand ");
+			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category)
+					.addValue("brand", "%" + brand + "%").addValue("beginNumber", beginNumber);
 		}
 
-		List<Item> itemList = template.query(sql, param, ITEM_CATEGORY_ROW_MAPPER);
+		sqlStr.append("ORDER BY i.id OFFSET :beginNumber LIMIT 30");
+
+		List<Item> itemList = template.query(sqlStr.toString(), param, ITEM_CATEGORY_ROW_MAPPER);
 		return itemList;
 	}
 
@@ -346,7 +327,7 @@ public class ItemRepository {
 	 * アイテム名、大カテゴリ、ブランド名検索のアイテム数取得.
 	 * 
 	 * @param name
-	 *            検索キーとなるアイテム
+	 *            検索キーとなるアイテム名
 	 * @param category
 	 *            検索キーとなる大カテゴリ
 	 * @param brand
@@ -354,38 +335,28 @@ public class ItemRepository {
 	 * @return アイテム数
 	 */
 	public Integer findByNameAndLargeCategoryAndBrandPageNumber(String name, Integer category, String brand) {
-		String sql = "SELECT COUNT(*) FROM items i " + "LEFT OUTER JOIN category sc ON category = sc.id "
-				+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
-				+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id "
-				+ "WHERE i.name ILIKE :name AND lc.id = :category AND i.brand ILIKE :brand";
 
-		SqlParameterSource param = new MapSqlParameterSource().addValue("name", "%" + name + "%")
-				.addValue("category", category).addValue("brand", "%" + brand + "%");
+		StringBuilder sqlStr = new StringBuilder();
+		sqlStr.append("SELECT COUNT(*) FROM items i " + "LEFT OUTER JOIN category sc ON category = sc.id "
+				+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
+				+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id ");
+		SqlParameterSource param;
 
 		if ((name == null && brand == null) || (name.equals("") && brand.equals(""))) {
-			sql = "SELECT COUNT(*) FROM items i " + "LEFT OUTER JOIN category sc ON category = sc.id "
-					+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
-					+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id " + "WHERE lc.id = :category";
-
+			sqlStr.append("WHERE lc.id = :category");
 			param = new MapSqlParameterSource().addValue("category", category);
 		} else if (name == null || name.equals("")) {
-			sql = "SELECT COUNT(*) FROM items i " + "LEFT OUTER JOIN category sc ON category = sc.id "
-					+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
-					+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id "
-					+ "WHERE lc.id = :category AND i.brand ILIKE :brand";
-
+			sqlStr.append("WHERE lc.id = :category AND i.brand ILIKE :brand");
 			param = new MapSqlParameterSource().addValue("category", category).addValue("brand", "%" + brand + "%");
-
 		} else if (brand == null || brand.equals("")) {
-			sql = "SELECT COUNT(*) FROM items i " + "LEFT OUTER JOIN category sc ON category = sc.id "
-					+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
-					+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id "
-					+ "WHERE i.name ILIKE :name AND lc.id = :category";
-
+			sqlStr.append("WHERE i.name ILIKE :name AND lc.id = :category");
 			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category);
+		} else {
+			sqlStr.append("WHERE i.name ILIKE :name AND lc.id = :category AND i.brand ILIKE :brand");
+			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category).addValue("brand", "%" + brand + "%");
 		}
 
-		Integer itemNum = template.queryForObject(sql, param, Integer.class);
+		Integer itemNum = template.queryForObject(sqlStr.toString(), param, Integer.class);
 		return itemNum;
 	}
 
@@ -393,63 +364,42 @@ public class ItemRepository {
 	 * アイテム名、大カテゴリ、ブランド名でアイテム検索.
 	 * 
 	 * @param name
-	 *            検索キーとなるアイテム
+	 *            アイテム名
 	 * @param category
 	 *            検索キーとなる大カテゴリ
 	 * @param brand
 	 *            検索キーとなるブランド
 	 * @return アイテム一覧
 	 */
-	public List<Item> findByNameAndLargeCategoryAndBrand(String name, Integer category, String brand,
-			Integer beginNumber) {
+	public List<Item> findByNameAndLargeCategoryAndBrand(String name, Integer category, String brand,Integer beginNumber) {
 
-		String sql = "select i.id item_id,i.name item_name,condition,category,brand,price,shipping,description,"
+		StringBuilder sqlStr = new StringBuilder();
+		sqlStr.append("select i.id item_id,i.name item_name,condition,category,brand,price,shipping,description,"
 				+ "sc.id sc_id,sc.name sc_name,sc.parent sc_parent,sc.name_all sc_name_all, "
 				+ "mc.id mc_id,mc.name mc_name,mc.parent mc_parent," + "lc.id lc_id,lc.name lc_name " + "FROM items i "
 				+ "LEFT OUTER JOIN category sc ON category = sc.id "
 				+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
-				+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id "
-				+ "WHERE i.name ILIKE :name AND lc.id = :category AND i.brand ILIKE :brand " + "ORDER BY i.id "
-				+ "OFFSET :beginNumber LIMIT 30";
-		SqlParameterSource param = new MapSqlParameterSource().addValue("name", "%" + name + "%")
-				.addValue("category", category).addValue("brand", "%" + brand + "%")
-				.addValue("beginNumber", beginNumber);
+				+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id ");
+		SqlParameterSource param;
 
 		if ((name == null && brand == null) || (name.equals("") && brand.equals(""))) {
-			sql = "select i.id item_id,i.name item_name,condition,category,brand,price,shipping,description,"
-					+ "sc.id sc_id,sc.name sc_name,sc.parent sc_parent,sc.name_all sc_name_all, "
-					+ "mc.id mc_id,mc.name mc_name,mc.parent mc_parent," + "lc.id lc_id,lc.name lc_name "
-					+ "FROM items i " + "LEFT OUTER JOIN category sc ON category = sc.id "
-					+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
-					+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id " + "WHERE lc.id = :category ORDER BY i.id "
-					+ "OFFSET :beginNumber LIMIT 30";
+			sqlStr.append("WHERE lc.id = :category ");
 			param = new MapSqlParameterSource().addValue("category", category).addValue("beginNumber", beginNumber);
 		} else if (name == null || name.equals("")) {
-			sql = "select i.id item_id,i.name item_name,condition,category,brand,price,shipping,description,"
-					+ "sc.id sc_id,sc.name sc_name,sc.parent sc_parent,sc.name_all sc_name_all, "
-					+ "mc.id mc_id,mc.name mc_name,mc.parent mc_parent," + "lc.id lc_id,lc.name lc_name "
-					+ "FROM items i " + "LEFT OUTER JOIN category sc ON category = sc.id "
-					+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
-					+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id "
-					+ "WHERE lc.id = :category AND i.brand ILIKE :brand " + "ORDER BY i.id "
-					+ "OFFSET :beginNumber LIMIT 30";
-			param = new MapSqlParameterSource().addValue("category", category).addValue("brand", "%" + brand + "%")
-					.addValue("beginNumber", beginNumber);
-
+			sqlStr.append("WHERE lc.id = :category AND i.brand ILIKE :brand ");
+			param = new MapSqlParameterSource().addValue("category", category).addValue("brand", "%" + brand + "%").addValue("beginNumber", beginNumber);
 		} else if (brand == null || brand.equals("")) {
-			sql = "select i.id item_id,i.name item_name,condition,category,brand,price,shipping,description,"
-					+ "sc.id sc_id,sc.name sc_name,sc.parent sc_parent,sc.name_all sc_name_all, "
-					+ "mc.id mc_id,mc.name mc_name,mc.parent mc_parent," + "lc.id lc_id,lc.name lc_name "
-					+ "FROM items i " + "LEFT OUTER JOIN category sc ON category = sc.id "
-					+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
-					+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id "
-					+ "WHERE i.name ILIKE :name AND lc.id = :category " + "ORDER BY i.id "
-					+ "OFFSET :beginNumber LIMIT 30";
+			sqlStr.append("WHERE i.name ILIKE :name AND lc.id = :category ");
+			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category).addValue("beginNumber", beginNumber);
+		}else {
+			sqlStr.append("WHERE i.name ILIKE :name AND lc.id = :category AND i.brand ILIKE :brand ");
 			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category)
-					.addValue("beginNumber", beginNumber);
-
+					.addValue("brand", "%" + brand + "%").addValue("beginNumber", beginNumber);
 		}
-		List<Item> itemList = template.query(sql, param, ITEM_CATEGORY_ROW_MAPPER);
+		
+		sqlStr.append("ORDER BY i.id OFFSET :beginNumber LIMIT 30");
+		
+		List<Item> itemList = template.query(sqlStr.toString(), param, ITEM_CATEGORY_ROW_MAPPER);
 		return itemList;
 	}
 
@@ -465,38 +415,28 @@ public class ItemRepository {
 	 * @return アイテム数
 	 */
 	public Integer findByNameAndMiddleCategoryAndBrandPageNumber(String name, Integer category, String brand) {
-		String sql = "SELECT COUNT(*) FROM items i " + "LEFT OUTER JOIN category sc ON category = sc.id "
+		StringBuilder sqlStr = new StringBuilder();
+		sqlStr.append("SELECT COUNT(*) FROM items i " + "LEFT OUTER JOIN category sc ON category = sc.id "
 				+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
-				+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id "
-				+ "WHERE i.name ILIKE :name AND mc.id = :category AND i.brand ILIKE :brand";
-
-		SqlParameterSource param = new MapSqlParameterSource().addValue("name", "%" + name + "%")
-				.addValue("category", category).addValue("brand", "%" + brand + "%");
+				+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id ");
+		SqlParameterSource param;
 
 		if ((name == null && brand == null) || (name.equals("") && brand.equals(""))) {
-			sql = "SELECT COUNT(*) FROM items i " + "LEFT OUTER JOIN category sc ON category = sc.id "
-					+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
-					+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id " + "WHERE mc.id = :category";
-
+			sqlStr.append("WHERE mc.id = :category");
 			param = new MapSqlParameterSource().addValue("category", category);
 
 		} else if (name == null || name.equals("")) {
-			sql = "SELECT COUNT(*) FROM items i " + "LEFT OUTER JOIN category sc ON category = sc.id "
-					+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
-					+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id "
-					+ "WHERE mc.id = :category AND i.brand ILIKE :brand";
-
+			sqlStr.append("WHERE mc.id = :category AND i.brand ILIKE :brand");
 			param = new MapSqlParameterSource().addValue("category", category).addValue("brand", "%" + brand + "%");
 
 		} else if (brand == null || brand.equals("")) {
-			sql = "SELECT COUNT(*) FROM items i " + "LEFT OUTER JOIN category sc ON category = sc.id "
-					+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
-					+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id "
-					+ "WHERE i.name ILIKE :name AND mc.id = :category";
-
+			sqlStr.append("WHERE i.name ILIKE :name AND mc.id = :category");
 			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category);
+		}else {
+			sqlStr.append("WHERE i.name ILIKE :name AND mc.id = :category AND i.brand ILIKE :brand");
+			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category).addValue("brand", "%" + brand + "%");
 		}
-		Integer itemNum = template.queryForObject(sql, param, Integer.class);
+		Integer itemNum = template.queryForObject(sqlStr.toString(), param, Integer.class);
 		return itemNum;
 	}
 
@@ -514,54 +454,35 @@ public class ItemRepository {
 	public List<Item> findByNameAndMiddleCategoryAndBrand(String name, Integer category, String brand,
 			Integer beginNumber) {
 
-		String sql = "select i.id item_id,i.name item_name,condition,category,brand,price,shipping,description,"
+		StringBuilder sqlStr = new StringBuilder();
+		sqlStr.append("select i.id item_id,i.name item_name,condition,category,brand,price,shipping,description,"
 				+ "sc.id sc_id,sc.name sc_name,sc.parent sc_parent,sc.name_all sc_name_all, "
 				+ "mc.id mc_id,mc.name mc_name,mc.parent mc_parent," + "lc.id lc_id,lc.name lc_name " + "FROM items i "
 				+ "LEFT OUTER JOIN category sc ON category = sc.id "
 				+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
-				+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id "
-				+ "WHERE i.name ILIKE :name AND mc.id = :category AND i.brand ILIKE :brand " + "ORDER BY i.id "
-				+ "OFFSET :beginNumber LIMIT 30";
-		SqlParameterSource param = new MapSqlParameterSource().addValue("name", "%" + name + "%")
-				.addValue("category", category).addValue("brand", "%" + brand + "%")
-				.addValue("beginNumber", beginNumber);
+				+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id ");
+		SqlParameterSource param;
 
 		if ((name == null && brand == null) || (name.equals("") && brand.equals(""))) {
-			sql = "select i.id item_id,i.name item_name,condition,category,brand,price,shipping,description,"
-					+ "sc.id sc_id,sc.name sc_name,sc.parent sc_parent,sc.name_all sc_name_all, "
-					+ "mc.id mc_id,mc.name mc_name,mc.parent mc_parent," + "lc.id lc_id,lc.name lc_name "
-					+ "FROM items i " + "LEFT OUTER JOIN category sc ON category = sc.id "
-					+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
-					+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id " + "WHERE mc.id = :category ORDER BY i.id "
-					+ "OFFSET :beginNumber LIMIT 30";
+			sqlStr.append("WHERE mc.id = :category ");
 			param = new MapSqlParameterSource().addValue("category", category).addValue("beginNumber", beginNumber);
 
 		} else if (name == null || name.equals("")) {
-			sql = "select i.id item_id,i.name item_name,condition,category,brand,price,shipping,description,"
-					+ "sc.id sc_id,sc.name sc_name,sc.parent sc_parent,sc.name_all sc_name_all, "
-					+ "mc.id mc_id,mc.name mc_name,mc.parent mc_parent," + "lc.id lc_id,lc.name lc_name "
-					+ "FROM items i " + "LEFT OUTER JOIN category sc ON category = sc.id "
-					+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
-					+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id "
-					+ "WHERE mc.id = :category AND i.brand ILIKE :brand " + "ORDER BY i.id "
-					+ "OFFSET :beginNumber LIMIT 30";
-			param = new MapSqlParameterSource().addValue("category", category).addValue("brand", "%" + brand + "%")
-					.addValue("beginNumber", beginNumber);
+			sqlStr.append("WHERE mc.id = :category AND i.brand ILIKE :brand ");
+			param = new MapSqlParameterSource().addValue("category", category).addValue("brand", "%" + brand + "%").addValue("beginNumber", beginNumber);
 
 		} else if (brand == null || brand.equals("")) {
-			sql = "select i.id item_id,i.name item_name,condition,category,brand,price,shipping,description,"
-					+ "sc.id sc_id,sc.name sc_name,sc.parent sc_parent,sc.name_all sc_name_all, "
-					+ "mc.id mc_id,mc.name mc_name,mc.parent mc_parent," + "lc.id lc_id,lc.name lc_name "
-					+ "FROM items i " + "LEFT OUTER JOIN category sc ON category = sc.id "
-					+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
-					+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id "
-					+ "WHERE i.name ILIKE :name AND mc.id = :category " + "ORDER BY i.id "
-					+ "OFFSET :beginNumber LIMIT 30";
-			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category)
-					.addValue("beginNumber", beginNumber);
+			sqlStr.append("WHERE i.name ILIKE :name AND mc.id = :category "); 
+			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category).addValue("beginNumber", beginNumber);
 
+		}else {
+			sqlStr.append("WHERE i.name ILIKE :name AND mc.id = :category AND i.brand ILIKE :brand ");
+			 param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category)
+					 .addValue("brand", "%" + brand + "%").addValue("beginNumber", beginNumber);
 		}
-		List<Item> itemList = template.query(sql, param, ITEM_CATEGORY_ROW_MAPPER);
+		
+		sqlStr.append("ORDER BY i.id OFFSET :beginNumber LIMIT 30");
+		List<Item> itemList = template.query(sqlStr.toString(), param, ITEM_CATEGORY_ROW_MAPPER);
 		return itemList;
 	}
 
@@ -592,7 +513,8 @@ public class ItemRepository {
 
 		String sql = "select id ,name ,condition,category,brand,price,shipping,description " + "FROM items "
 				+ "WHERE brand ILIKE :brand " + "ORDER BY id " + "OFFSET :beginNumber LIMIT 30";
-		SqlParameterSource param = new MapSqlParameterSource().addValue("brand", brand).addValue("beginNumber", beginNumber);
+		SqlParameterSource param = new MapSqlParameterSource().addValue("brand", brand).addValue("beginNumber",
+				beginNumber);
 
 		List<Item> itemList = template.query(sql, param, ITEM_ROW_MAPPER);
 		return itemList;
