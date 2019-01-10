@@ -1,0 +1,11 @@
+spring:
+  mvc:  
+    view:  
+      prefix: /WEB-INF/views/
+      suffix: .jsp
+
+  datasource:
+    driverClassName: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/massdata
+    username: postgres
+    password: postgres
