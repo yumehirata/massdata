@@ -182,6 +182,40 @@ public class ItemRepository {
 		List<Item> itemList = template.query(sql, param, ITEM_CATEGORY_ROW_MAPPER);
 		return itemList.get(0);
 	}
+	
+	/**
+	 * ブランド名完全一致検索のアイテム数取得.
+	 * 
+	 * @param brand
+	 *            検索キーとなるカテゴリID
+	 * @return アイテム数
+	 */
+	public Integer findByBrandCompletelyPageNumber(String brand) {
+
+		String sql = "SELECT COUNT(*) FROM items WHERE brand ILIKE :brand";
+		SqlParameterSource param = new MapSqlParameterSource().addValue("brand", brand);
+
+		Integer itemNum = template.queryForObject(sql, param, Integer.class);
+		return itemNum;
+	}
+
+	/**
+	 * ブランド名完全一致のアイテム検索.
+	 * 
+	 * @param brand
+	 *            検索キーとなるカテゴリID
+	 * @return アイテム一覧
+	 */
+	public List<Item> findByBrandCompletely(String brand, Integer beginNumber) {
+
+		String sql = "select id ,name ,condition,category,brand,price,shipping,description " + "FROM items "
+				+ "WHERE brand ILIKE :brand " + "ORDER BY id " + "OFFSET :beginNumber LIMIT 30";
+		SqlParameterSource param = new MapSqlParameterSource().addValue("brand", brand).addValue("beginNumber",
+				beginNumber);
+
+		List<Item> itemList = template.query(sql, param, ITEM_ROW_MAPPER);
+		return itemList;
+	}
 
 	/**
 	 * アイテム名とブランド名検索のアイテム数取得.
@@ -244,75 +278,170 @@ public class ItemRepository {
 		return itemList;
 	}
 
+
+
 	/**
-	 * アイテム名、カテゴリ、ブランド名検索のアイテム数取得.
+	 * カテゴリ使用時のアイテム数取得.
 	 * 
 	 * @param name
-	 *            検索キーとなるアイテム名
-	 * @param category
-	 *            検索キーとなるカテゴリ
+	 *            アイテム名
+	 * @param largeCategory
+	 *            大カテゴリID
+	 * @param middleCategory
+	 *            中カテゴリID
+	 * @param smallCategory
+	 *            小カテゴリID
 	 * @param brand
-	 *            検索キーとなるブランド
-	 * @return アイテム数
+	 *            ブランド名
+	 * @return アイテム一覧
 	 */
-	public Integer findByNameAndCategoryAndBrandPageNumber(String name, Integer category, String brand) {
-		String sql = "SELECT COUNT(*) FROM items WHERE name ILIKE :name AND category = :category AND brand ILIKE :brand";
-		SqlParameterSource param = new MapSqlParameterSource().addValue("name", "%" + name + "%")
-				.addValue("category", category).addValue("brand", "%" + brand + "%");
+	public Integer findByNameAndCategoryAndBrandPageNumber(String name, Integer largeCategory, Integer middleCategory,
+			Integer smallCategory, String brand) {
+
+		StringBuilder sqlStr = new StringBuilder();
+		sqlStr.append("SELECT COUNT(*) FROM items i " + "LEFT OUTER JOIN category sc ON category = sc.id "
+				+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
+				+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id ");
+		SqlParameterSource param;
+		Integer category;
 
 		if ((name == null && brand == null) || (name.equals("") && brand.equals(""))) {
-			sql = "SELECT COUNT(*) FROM items WHERE category = :category";
+			if (smallCategory != null) {
+				category = smallCategory;
+				sqlStr.append("WHERE category = :category");
+			} else if (middleCategory != null) {
+				category = middleCategory;
+				sqlStr.append("WHERE mc.id = :category");
+			} else {
+				category = largeCategory;
+				sqlStr.append("WHERE lc.id = :category");
+			}
 			param = new MapSqlParameterSource().addValue("category", category);
-		} else if (name == null || name.equals("")) {
-			sql = "SELECT COUNT(*) FROM items WHERE category = :category AND brand ILIKE :brand";
-			param = new MapSqlParameterSource().addValue("category", category).addValue("brand", "%" + brand + "%");
-		} else if (brand == null || brand.equals("")) {
-			sql = "SELECT COUNT(*) FROM items WHERE name ILIKE :name AND category = :category";
-			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category);
-		}
 
-		Integer itemNum = template.queryForObject(sql, param, Integer.class);
+		} else if (name == null || name.equals("")) {
+			if (smallCategory != null) {
+				category = smallCategory;
+				sqlStr.append("WHERE category = :category AND i.brand ILIKE :brand");
+			} else if (middleCategory != null) {
+				category = middleCategory;
+				sqlStr.append("WHERE mc.id = :category AND i.brand ILIKE :brand");
+			} else {
+				category = largeCategory;
+				sqlStr.append("WHERE lc.id = :category AND i.brand ILIKE :brand");
+			}
+			param = new MapSqlParameterSource().addValue("category", category).addValue("brand", "%" + brand + "%");
+
+		} else if (brand == null || brand.equals("")) {
+			if (smallCategory != null) {
+				category = smallCategory;
+				sqlStr.append("WHERE i.name ILIKE :name AND category = :category");
+			} else if (middleCategory != null) {
+				category = middleCategory;
+				sqlStr.append("WHERE i.name ILIKE :name AND mc.id = :category");
+			} else {
+				category = largeCategory;
+				sqlStr.append("WHERE i.name ILIKE :name AND lc.id = :category");
+			}
+			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category);
+		} else {
+			if (smallCategory != null) {
+				category = smallCategory;
+				sqlStr.append("WHERE i.name ILIKE :name AND category = :category AND i.brand ILIKE :brand");
+			} else if (middleCategory != null) {
+				category = middleCategory;
+				sqlStr.append("WHERE i.name ILIKE :name AND mc.id = :category AND i.brand ILIKE :brand");
+			} else {
+				category = largeCategory;
+				sqlStr.append("WHERE i.name ILIKE :name AND lc.id = :category AND i.brand ILIKE :brand");
+			}
+			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category)
+					.addValue("brand", "%" + brand + "%");
+		}
+		Integer itemNum = template.queryForObject(sqlStr.toString(), param, Integer.class);
 		return itemNum;
 	}
 
 	/**
-	 * アイテム名、カテゴリ、ブランド名でアイテム検索.
+	 * カテゴリ使用時のアイテム検索.
 	 * 
 	 * @param name
-	 *            検索キーとなるアイテム
-	 * @param category
-	 *            検索キーとなるカテゴリ
+	 *            アイテム名
+	 * @param largeCategory
+	 *            大カテゴリID
+	 * @param middleCategory
+	 *            中カテゴリID
+	 * @param smallCategory
+	 *            小カテゴリID
 	 * @param brand
-	 *            検索キーとなるブランド
+	 *            ブランド名
+	 * @param beginNumber
+	 *            検索開始位置
 	 * @return アイテム一覧
 	 */
-	public List<Item> findByNameAndCategoryAndBrand(String name, Integer category, String brand, Integer beginNumber) {
-
+	public List<Item> findByNameAndCategoryAndBrand(String name, Integer largeCategory, Integer middleCategory, Integer smallCategory,
+			String brand, Integer beginNumber) {
 		StringBuilder sqlStr = new StringBuilder();
-		sqlStr.append("SELECT i.id item_id,i.name item_name,condition,category,brand,price,shipping,description,"
+		sqlStr.append("select i.id item_id,i.name item_name,condition,category,brand,price,shipping,description,"
 				+ "sc.id sc_id,sc.name sc_name,sc.parent sc_parent,sc.name_all sc_name_all, "
 				+ "mc.id mc_id,mc.name mc_name,mc.parent mc_parent," + "lc.id lc_id,lc.name lc_name " + "FROM items i "
 				+ "LEFT OUTER JOIN category sc ON category = sc.id "
 				+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
 				+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id ");
 		SqlParameterSource param;
+		Integer category;
 
 		if ((name == null && brand == null) || (name.equals("") && brand.equals(""))) {
-			sqlStr.append("WHERE category = :category ");
+			if (smallCategory != null) {
+				category = smallCategory;
+				sqlStr.append("WHERE category = :category ");
+			} else if (middleCategory != null) {
+				category = middleCategory;
+				sqlStr.append("WHERE mc.id = :category ");
+			} else {
+				category = largeCategory;
+				sqlStr.append("WHERE lc.id = :category ");
+			}
 			param = new MapSqlParameterSource().addValue("category", category).addValue("beginNumber", beginNumber);
 
 		} else if (name == null || name.equals("")) {
-			sqlStr.append("WHERE category = :category AND i.brand ILIKE :brand ");
+			if (smallCategory != null) {
+				category = smallCategory;
+				sqlStr.append("WHERE category = :category AND i.brand ILIKE :brand ");
+			} else if (middleCategory != null) {
+				category = middleCategory;
+				sqlStr.append("WHERE mc.id = :category AND i.brand ILIKE :brand ");
+			} else {
+				category = largeCategory;
+				sqlStr.append("WHERE lc.id = :category AND i.brand ILIKE :brand ");
+			}
 			param = new MapSqlParameterSource().addValue("category", category).addValue("brand", "%" + brand + "%")
 					.addValue("beginNumber", beginNumber);
 
 		} else if (brand == null || brand.equals("")) {
-			sqlStr.append("WHERE i.name ILIKE :name AND category = :category ");
+			if (smallCategory != null) {
+				category = smallCategory;
+				sqlStr.append("WHERE i.name ILIKE :name AND category = :category ");
+			} else if (middleCategory != null) {
+				category = middleCategory;
+				sqlStr.append("WHERE i.name ILIKE :name AND mc.id = :category ");
+			} else {
+				category = largeCategory;
+				sqlStr.append("WHERE i.name ILIKE :name AND lc.id = :category ");
+			}
 			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category)
 					.addValue("beginNumber", beginNumber);
 
 		} else {
-			sqlStr.append("WHERE i.name ILIKE :name AND category = :category AND i.brand ILIKE :brand ");
+			if (smallCategory != null) {
+				category = smallCategory;
+				sqlStr.append("WHERE i.name ILIKE :name AND category = :category AND i.brand ILIKE :brand ");
+			} else if (middleCategory != null) {
+				category = middleCategory;
+				sqlStr.append("WHERE i.name ILIKE :name AND mc.id = :category AND i.brand ILIKE :brand ");
+			} else {
+				category = largeCategory;
+				sqlStr.append("WHERE i.name ILIKE :name AND lc.id = :category AND i.brand ILIKE :brand ");
+			}
 			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category)
 					.addValue("brand", "%" + brand + "%").addValue("beginNumber", beginNumber);
 		}
@@ -320,202 +449,6 @@ public class ItemRepository {
 		sqlStr.append("ORDER BY i.id OFFSET :beginNumber LIMIT 30");
 
 		List<Item> itemList = template.query(sqlStr.toString(), param, ITEM_CATEGORY_ROW_MAPPER);
-		return itemList;
-	}
-
-	/**
-	 * アイテム名、大カテゴリ、ブランド名検索のアイテム数取得.
-	 * 
-	 * @param name
-	 *            検索キーとなるアイテム名
-	 * @param category
-	 *            検索キーとなる大カテゴリ
-	 * @param brand
-	 *            検索キーとなるブランド
-	 * @return アイテム数
-	 */
-	public Integer findByNameAndLargeCategoryAndBrandPageNumber(String name, Integer category, String brand) {
-
-		StringBuilder sqlStr = new StringBuilder();
-		sqlStr.append("SELECT COUNT(*) FROM items i " + "LEFT OUTER JOIN category sc ON category = sc.id "
-				+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
-				+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id ");
-		SqlParameterSource param;
-
-		if ((name == null && brand == null) || (name.equals("") && brand.equals(""))) {
-			sqlStr.append("WHERE lc.id = :category");
-			param = new MapSqlParameterSource().addValue("category", category);
-		} else if (name == null || name.equals("")) {
-			sqlStr.append("WHERE lc.id = :category AND i.brand ILIKE :brand");
-			param = new MapSqlParameterSource().addValue("category", category).addValue("brand", "%" + brand + "%");
-		} else if (brand == null || brand.equals("")) {
-			sqlStr.append("WHERE i.name ILIKE :name AND lc.id = :category");
-			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category);
-		} else {
-			sqlStr.append("WHERE i.name ILIKE :name AND lc.id = :category AND i.brand ILIKE :brand");
-			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category).addValue("brand", "%" + brand + "%");
-		}
-
-		Integer itemNum = template.queryForObject(sqlStr.toString(), param, Integer.class);
-		return itemNum;
-	}
-
-	/**
-	 * アイテム名、大カテゴリ、ブランド名でアイテム検索.
-	 * 
-	 * @param name
-	 *            アイテム名
-	 * @param category
-	 *            検索キーとなる大カテゴリ
-	 * @param brand
-	 *            検索キーとなるブランド
-	 * @return アイテム一覧
-	 */
-	public List<Item> findByNameAndLargeCategoryAndBrand(String name, Integer category, String brand,Integer beginNumber) {
-
-		StringBuilder sqlStr = new StringBuilder();
-		sqlStr.append("select i.id item_id,i.name item_name,condition,category,brand,price,shipping,description,"
-				+ "sc.id sc_id,sc.name sc_name,sc.parent sc_parent,sc.name_all sc_name_all, "
-				+ "mc.id mc_id,mc.name mc_name,mc.parent mc_parent," + "lc.id lc_id,lc.name lc_name " + "FROM items i "
-				+ "LEFT OUTER JOIN category sc ON category = sc.id "
-				+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
-				+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id ");
-		SqlParameterSource param;
-
-		if ((name == null && brand == null) || (name.equals("") && brand.equals(""))) {
-			sqlStr.append("WHERE lc.id = :category ");
-			param = new MapSqlParameterSource().addValue("category", category).addValue("beginNumber", beginNumber);
-		} else if (name == null || name.equals("")) {
-			sqlStr.append("WHERE lc.id = :category AND i.brand ILIKE :brand ");
-			param = new MapSqlParameterSource().addValue("category", category).addValue("brand", "%" + brand + "%").addValue("beginNumber", beginNumber);
-		} else if (brand == null || brand.equals("")) {
-			sqlStr.append("WHERE i.name ILIKE :name AND lc.id = :category ");
-			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category).addValue("beginNumber", beginNumber);
-		}else {
-			sqlStr.append("WHERE i.name ILIKE :name AND lc.id = :category AND i.brand ILIKE :brand ");
-			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category)
-					.addValue("brand", "%" + brand + "%").addValue("beginNumber", beginNumber);
-		}
-		
-		sqlStr.append("ORDER BY i.id OFFSET :beginNumber LIMIT 30");
-		
-		List<Item> itemList = template.query(sqlStr.toString(), param, ITEM_CATEGORY_ROW_MAPPER);
-		return itemList;
-	}
-
-	/**
-	 * アイテム名、中カテゴリ、ブランド名検索のアイテム数取得.
-	 * 
-	 * @param name
-	 *            検索キーとなるアイテム
-	 * @param category
-	 *            検索キーとなる中カテゴリ
-	 * @param brand
-	 *            検索キーとなるブランド
-	 * @return アイテム数
-	 */
-	public Integer findByNameAndMiddleCategoryAndBrandPageNumber(String name, Integer category, String brand) {
-		StringBuilder sqlStr = new StringBuilder();
-		sqlStr.append("SELECT COUNT(*) FROM items i " + "LEFT OUTER JOIN category sc ON category = sc.id "
-				+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
-				+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id ");
-		SqlParameterSource param;
-
-		if ((name == null && brand == null) || (name.equals("") && brand.equals(""))) {
-			sqlStr.append("WHERE mc.id = :category");
-			param = new MapSqlParameterSource().addValue("category", category);
-
-		} else if (name == null || name.equals("")) {
-			sqlStr.append("WHERE mc.id = :category AND i.brand ILIKE :brand");
-			param = new MapSqlParameterSource().addValue("category", category).addValue("brand", "%" + brand + "%");
-
-		} else if (brand == null || brand.equals("")) {
-			sqlStr.append("WHERE i.name ILIKE :name AND mc.id = :category");
-			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category);
-		}else {
-			sqlStr.append("WHERE i.name ILIKE :name AND mc.id = :category AND i.brand ILIKE :brand");
-			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category).addValue("brand", "%" + brand + "%");
-		}
-		Integer itemNum = template.queryForObject(sqlStr.toString(), param, Integer.class);
-		return itemNum;
-	}
-
-	/**
-	 * アイテム名、中カテゴリ、ブランド名でアイテム検索.
-	 * 
-	 * @param name
-	 *            検索キーとなるアイテム
-	 * @param category
-	 *            検索キーとなる大カテゴリ
-	 * @param brand
-	 *            検索キーとなるブランド
-	 * @return アイテム一覧
-	 */
-	public List<Item> findByNameAndMiddleCategoryAndBrand(String name, Integer category, String brand,
-			Integer beginNumber) {
-
-		StringBuilder sqlStr = new StringBuilder();
-		sqlStr.append("select i.id item_id,i.name item_name,condition,category,brand,price,shipping,description,"
-				+ "sc.id sc_id,sc.name sc_name,sc.parent sc_parent,sc.name_all sc_name_all, "
-				+ "mc.id mc_id,mc.name mc_name,mc.parent mc_parent," + "lc.id lc_id,lc.name lc_name " + "FROM items i "
-				+ "LEFT OUTER JOIN category sc ON category = sc.id "
-				+ "LEFT OUTER JOIN category mc ON sc.parent = mc.id "
-				+ "LEFT OUTER JOIN category lc ON mc.parent = lc.id ");
-		SqlParameterSource param;
-
-		if ((name == null && brand == null) || (name.equals("") && brand.equals(""))) {
-			sqlStr.append("WHERE mc.id = :category ");
-			param = new MapSqlParameterSource().addValue("category", category).addValue("beginNumber", beginNumber);
-
-		} else if (name == null || name.equals("")) {
-			sqlStr.append("WHERE mc.id = :category AND i.brand ILIKE :brand ");
-			param = new MapSqlParameterSource().addValue("category", category).addValue("brand", "%" + brand + "%").addValue("beginNumber", beginNumber);
-
-		} else if (brand == null || brand.equals("")) {
-			sqlStr.append("WHERE i.name ILIKE :name AND mc.id = :category "); 
-			param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category).addValue("beginNumber", beginNumber);
-
-		}else {
-			sqlStr.append("WHERE i.name ILIKE :name AND mc.id = :category AND i.brand ILIKE :brand ");
-			 param = new MapSqlParameterSource().addValue("name", "%" + name + "%").addValue("category", category)
-					 .addValue("brand", "%" + brand + "%").addValue("beginNumber", beginNumber);
-		}
-		
-		sqlStr.append("ORDER BY i.id OFFSET :beginNumber LIMIT 30");
-		List<Item> itemList = template.query(sqlStr.toString(), param, ITEM_CATEGORY_ROW_MAPPER);
-		return itemList;
-	}
-
-	/**
-	 * ブランド名完全一致検索のアイテム数取得.
-	 * 
-	 * @param brand
-	 *            検索キーとなるカテゴリID
-	 * @return アイテム数
-	 */
-	public Integer findByBrandCompletelyPageNumber(String brand) {
-
-		String sql = "SELECT COUNT(*) FROM items WHERE brand ILIKE :brand";
-		SqlParameterSource param = new MapSqlParameterSource().addValue("brand", brand);
-
-		Integer itemNum = template.queryForObject(sql, param, Integer.class);
-		return itemNum;
-	}
-
-	/**
-	 * アイテム名とブランド名でアイテム検索.
-	 * 
-	 * @param brand
-	 *            検索キーとなるカテゴリID
-	 * @return アイテム一覧
-	 */
-	public List<Item> findByBrandCompletely(String brand, Integer beginNumber) {
-
-		String sql = "select id ,name ,condition,category,brand,price,shipping,description " + "FROM items "
-				+ "WHERE brand ILIKE :brand " + "ORDER BY id " + "OFFSET :beginNumber LIMIT 30";
-		SqlParameterSource param = new MapSqlParameterSource().addValue("brand", brand).addValue("beginNumber",beginNumber);
-
-		List<Item> itemList = template.query(sql, param, ITEM_ROW_MAPPER);
 		return itemList;
 	}
 }

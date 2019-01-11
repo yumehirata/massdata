@@ -6,6 +6,7 @@ $('#largeCategory').on('change',function(){
 	if($('#largeCategory').val()!=""){
 		$('#middleCategory').empty();
 		$('#middleCategory').html(noValueMiddle);
+		$('#smallCategory').html(noValueSmall);
 		
 		var data = {
 			id : $('#largeCategory').val()
@@ -34,6 +35,7 @@ $('#largeCategory').on('change',function(){
 	
 	}else{
 		$('#middleCategory').html(noValueMiddle);
+		$('#smallCategory').html(noValueSmall);
 	}
 });
 

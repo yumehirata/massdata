@@ -1,5 +1,4 @@
 $(function(){
-	
 $('.toDetail').on('click',function(){
 	$.cookie.json = true;
 	

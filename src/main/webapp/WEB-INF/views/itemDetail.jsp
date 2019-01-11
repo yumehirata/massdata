@@ -13,7 +13,7 @@
   <!-- details -->
   <div class="container">
     <a type="button" class="btn btn-default" href="javascript:history.back()"><i class="fa fa-reply"></i> back</a>
-    <a type="button" class="btn btn-default" id="backList"><i class="fa fa-reply"></i> back(query)</a>
+    <a type="button" class="btn btn-default backList"><i class="fa fa-reply"></i> back(query)</a>
     <h2>Details</h2>
     <div id="details">
       <table class="table table-hover">

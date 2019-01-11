@@ -34,15 +34,23 @@ public class SearchItemController {
 	/**
 	 * アイテム検索.
 	 * 
-	 * @param name	アイテム名
-	 * @param largeCategory	大カテゴリID
-	 * @param middleCategory	中カテゴリID
-	 * @param smallCategory	小カテゴリID
-	 * @param brand	ブランド名
-	 * @param model	情報を送る引数
-	 * @param pageNumber	表示しているページ番号
-	 * @param isBrandSearch	ブランド絞り込みの有無
-	 * @return	検索結果画面
+	 * @param name
+	 *            アイテム名
+	 * @param largeCategory
+	 *            大カテゴリID
+	 * @param middleCategory
+	 *            中カテゴリID
+	 * @param smallCategory
+	 *            小カテゴリID
+	 * @param brand
+	 *            ブランド名
+	 * @param model
+	 *            情報を送る引数
+	 * @param pageNumber
+	 *            表示しているページ番号
+	 * @param isBrandSearch
+	 *            ブランド絞り込みの有無
+	 * @return 検索結果画面
 	 */
 	@RequestMapping("/search")
 	public String search(String name, Integer largeCategory, Integer middleCategory, Integer smallCategory,
@@ -78,8 +86,6 @@ public class SearchItemController {
 		session.setAttribute("smallCategory", smallCategory);
 		session.setAttribute("isBrandSearch", isBrandSearch);
 
-		System.out.println("if後" + name + largeCategory + middleCategory + smallCategory + brand + isBrandSearch);
-
 		if ((name == null || name.equals("")) && largeCategory == null && middleCategory == null
 				&& smallCategory == null && (brand == null || brand.equals(""))) {
 			return "forward:/item/list";
@@ -94,42 +100,22 @@ public class SearchItemController {
 		List<Category> largeCategoryList = categoryRepository.findLargeAll();
 		model.addAttribute("largeCategoryList", largeCategoryList);
 
-		if (isBrandSearch == true) {
-			pageLimit = (int) Math.ceil((double) searchItemService.searchItemNumberForBrand(brand) / 30);
-			if (pageNumber > pageLimit) {
-				pageNumber = pageLimit;
-			} else if (pageNumber < 1) {
-				pageNumber = 1;
-			}
-
-			itemList = searchItemService.searchItemForBrand(brand, beginNumber);
-
-			model.addAttribute("itemList", itemList);
-			model.addAttribute("pageLimit", pageLimit);
-			model.addAttribute("pageNumber", pageNumber);
-			return "itemList";
-		}
-
-		if (smallCategory != null) {
+		if (largeCategory != null || middleCategory!= null || smallCategory!=null) {
 			category = smallCategory;
-			pageLimit = (int) Math.ceil((double) searchItemService.searchItemNumber(name, category, brand) / 30);
-			itemList = searchItemService.searchItem(name, category, brand, beginNumber);
-
-		} else if (middleCategory != null) {
-			category = middleCategory;
-			pageLimit = (int) Math
-					.ceil((double) searchItemService.searchItemNumberByMiddleCategory(name, category, brand) / 30);
-			itemList = searchItemService.searchItemByMiddleCategory(name, category, brand, beginNumber);
-
-		} else if (largeCategory != null) {
-			category = largeCategory;
-			pageLimit = (int) Math
-					.ceil((double) searchItemService.searchItemNumberByLargeCategory(name, category, brand) / 30);
-			itemList = searchItemService.searchItemByLargeCategory(name, category, brand, beginNumber);
+			pageLimit = (int) Math.ceil((double) searchItemService.searchItemNumberUsingCategory(name, largeCategory,
+					middleCategory, smallCategory, brand) / 30);
+			itemList = searchItemService.searchItemUsingCategory(name, largeCategory, middleCategory, smallCategory,
+					brand, beginNumber);
 
 		} else {
-			pageLimit = (int) Math.ceil((double) searchItemService.searchItemNumber(name, category, brand) / 30);
-			itemList = searchItemService.searchItem(name, category, brand, beginNumber);
+			pageLimit = (int) Math
+					.ceil((double) searchItemService.searchItemNumberNoCategory(name, category, brand) / 30);
+			itemList = searchItemService.searchItemNoCategory(name, category, brand, beginNumber);
+
+			if (isBrandSearch == true) {
+				pageLimit = (int) Math.ceil((double) searchItemService.searchItemNumberForBrand(brand) / 30);
+				itemList = searchItemService.searchItemForBrand(brand, beginNumber);
+			}
 		}
 
 		if (pageNumber > pageLimit) {
@@ -141,7 +127,6 @@ public class SearchItemController {
 		model.addAttribute("itemList", itemList);
 		model.addAttribute("pageLimit", pageLimit);
 		model.addAttribute("pageNumber", pageNumber);
-		System.out.println("-----------");
 
 		return "itemList";
 	}

@@ -24,177 +24,134 @@ public class SearchItemService {
 	private CategoryRepository categoryRepository;
 
 	/**
-	 * 引数から適したメソッドを呼び出しアイテム検索を行う（小カテゴリ、カテゴリなし）.
+	 * カテゴリ不使用時のアイテム数検索.
 	 * 
 	 * @param name
 	 *            検索キーとなるアイテム名
-	 * @param category
-	 *            検索キーとなるカテゴリ
 	 * @param brand
 	 *            検索キーとなるブランド
 	 * @param beginNumber
 	 *            検索開始番号
 	 * @return アイテム一覧
 	 */
-	public List<Item> searchItem(String name, Integer category, String brand, Integer beginNumber) {
+	public List<Item> searchItemNoCategory(String name, Integer category, String brand, Integer beginNumber) {
 
 		List<Item> itemList;
 
-		if (category == null) {
-			itemList = itemRepository.findByNameAndBrand(name, brand, beginNumber);
+		itemList = itemRepository.findByNameAndBrand(name, brand, beginNumber);
 
-			for (Item preItem : itemList) {
-				Item item = itemRepository.findByIdHasCategory(preItem.getId());
+		for (Item preItem : itemList) {
+			Item item = itemRepository.findByIdHasCategory(preItem.getId());
 
-				Item forCategory = categoryRepository.findBySmallCategoryId(item.getCategory());
-				if (forCategory != null) {
-					preItem.setLargeCategory(forCategory.getLargeCategory());
-					preItem.setMiddleCategory(forCategory.getMiddleCategory());
-					preItem.setSmallCategory(forCategory.getSmallCategory());
-				}
+			Item forCategory = categoryRepository.findBySmallCategoryId(item.getCategory());
+			if (forCategory != null) {
+				preItem.setLargeCategory(forCategory.getLargeCategory());
+				preItem.setMiddleCategory(forCategory.getMiddleCategory());
+				preItem.setSmallCategory(forCategory.getSmallCategory());
 			}
-		} else {
-			itemList = itemRepository.findByNameAndCategoryAndBrand(name, category, brand, beginNumber);
 		}
 
 		return itemList;
 	}
 
 	/**
-	 * 引数から適したメソッドを呼び出しアイテム数検索を行う（小カテゴリ、カテゴリなし）.
+	 * カテゴリ不使用時のアイテム数検索.
 	 * 
 	 * @param name
 	 *            検索キーとなるアイテム名
-	 * @param category
-	 *            検索キーとなるカテゴリ
 	 * @param brand
 	 *            検索キーとなるブランド
 	 * @param beginNumber
 	 *            検索開始番号
 	 * @return アイテム数
 	 */
-	public int searchItemNumber(String name, Integer category, String brand) {
+	public int searchItemNumberNoCategory(String name, Integer category, String brand) {
 
-		int pageNumber;
-
-		if (category == null) {
-			pageNumber = itemRepository.findByNameAndBrandPageNumber(name, brand);
-		} else {
-			pageNumber = itemRepository.findByNameAndCategoryAndBrandPageNumber(name, category, brand);
-		}
+		int pageNumber = itemRepository.findByNameAndBrandPageNumber(name, brand);
 
 		return pageNumber;
 	}
 
 	/**
-	 * 引数から適したメソッドを呼び出しアイテム検索を行う（大カテゴリ）.
+	 * カテゴリ使用時のアイテム検索.
 	 * 
 	 * @param name
-	 *            検索キーとなるアイテム名
-	 * @param category
-	 *            検索キーとなるカテゴリ
+	 *            アイテム名
+	 * @param largeCategory
+	 *            大カテゴリID
+	 * @param middleCategory
+	 *            中カテゴリID
+	 * @param smallCategory
+	 *            小カテゴリID
 	 * @param brand
-	 *            検索キーとなるブランド
+	 *            ブランド名
 	 * @param beginNumber
-	 *            検索開始番号
+	 *            検索開始位置
 	 * @return アイテム一覧
 	 */
-	public List<Item> searchItemByLargeCategory(String name, Integer category, String brand, Integer beginNumber) {
-
-		List<Item> itemList = itemRepository.findByNameAndLargeCategoryAndBrand(name, category, brand, beginNumber);
+	public List<Item> searchItemUsingCategory(String name, Integer largeCategory, Integer middleCategory,
+			Integer smallCategory, String brand, Integer beginNumber) {
+		List<Item> itemList = itemRepository.findByNameAndCategoryAndBrand(name, largeCategory, middleCategory,
+				smallCategory, brand, beginNumber);
 
 		return itemList;
 	}
 
 	/**
-	 * 引数から適したメソッドを呼び出しアイテム数検索を行う（大カテゴリ）.
+	 * カテゴリ使用時のアイテム検索.
 	 * 
 	 * @param name
-	 *            検索キーとなるアイテム名
-	 * @param category
-	 *            検索キーとなるカテゴリ
+	 *            アイテム名
+	 * @param largeCategory
+	 *            大カテゴリID
+	 * @param middleCategory
+	 *            中カテゴリID
+	 * @param smallCategory
+	 *            小カテゴリID
 	 * @param brand
-	 *            検索キーとなるブランド
-	 * @param beginNumber
-	 *            検索開始番号
+	 *            ブランド名
 	 * @return アイテム数
 	 */
-	public int searchItemNumberByLargeCategory(String name, Integer category, String brand) {
-
-		int pageNumber = itemRepository.findByNameAndLargeCategoryAndBrandPageNumber(name, category, brand);
-
-		return pageNumber;
-	}
-
-	/**
-	 * 引数から適したメソッドを呼び出しアイテム検索を行う（中カテゴリ）.
-	 * 
-	 * @param name
-	 *            検索キーとなるアイテム名
-	 * @param category
-	 *            検索キーとなる中カテゴリ
-	 * @param brand
-	 *            検索キーとなるブランド
-	 * @param beginNumber
-	 *            検索開始番号
-	 * @return アイテム一覧
-	 */
-	public List<Item> searchItemByMiddleCategory(String name, Integer category, String brand, Integer beginNumber) {
-
-		List<Item> itemList = itemRepository.findByNameAndMiddleCategoryAndBrand(name, category, brand, beginNumber);
-
-		return itemList;
-	}
-
-	/**
-	 * 引数から適したメソッドを呼び出しアイテム数検索を行う（中カテゴリ）.
-	 * 
-	 * @param name
-	 *            検索キーとなるアイテム名
-	 * @param category
-	 *            検索キーとなる中カテゴリ
-	 * @param brand
-	 *            検索キーとなるブランド
-	 * @param beginNumber
-	 *            検索開始番号
-	 * @return アイテム数
-	 */
-	public int searchItemNumberByMiddleCategory(String name, Integer category, String brand) {
-
-		int pageNumber = itemRepository.findByNameAndMiddleCategoryAndBrandPageNumber(name, category, brand);
+	public Integer searchItemNumberUsingCategory(String name, Integer largeCategory, Integer middleCategory,
+			Integer smallCategory, String brand) {
+		int pageNumber = itemRepository.findByNameAndCategoryAndBrandPageNumber(name, largeCategory, middleCategory,
+				smallCategory, brand);
 
 		return pageNumber;
+
 	}
-	
+
 	/**
 	 * ブランド完全一致検索.
 	 * 
-	 * @param brand	検索キーとなるブランド名
-	 * @param beginNumber	検索開始番号
-	 * @return	アイテム一覧
+	 * @param brand
+	 *            検索キーとなるブランド名
+	 * @param beginNumber
+	 *            検索開始番号
+	 * @return アイテム一覧
 	 */
 	public List<Item> searchItemForBrand(String brand, Integer beginNumber) {
 
 		List<Item> itemList;
 
-			itemList = itemRepository.findByBrandCompletely(brand, beginNumber);
+		itemList = itemRepository.findByBrandCompletely(brand, beginNumber);
 
-			for (Item preItem : itemList) {
-				Item item = itemRepository.findByIdHasCategory(preItem.getId());
+		for (Item preItem : itemList) {
+			Item item = itemRepository.findByIdHasCategory(preItem.getId());
 
-				Item forCategory = categoryRepository.findBySmallCategoryId(item.getCategory());
-				if (forCategory != null) {
-					preItem.setLargeCategory(forCategory.getLargeCategory());
-					preItem.setMiddleCategory(forCategory.getMiddleCategory());
-					preItem.setSmallCategory(forCategory.getSmallCategory());
-				}
+			Item forCategory = categoryRepository.findBySmallCategoryId(item.getCategory());
+			if (forCategory != null) {
+				preItem.setLargeCategory(forCategory.getLargeCategory());
+				preItem.setMiddleCategory(forCategory.getMiddleCategory());
+				preItem.setSmallCategory(forCategory.getSmallCategory());
 			}
+		}
 
 		return itemList;
 	}
 
 	/**
-	 * 引数から適したメソッドを呼び出しアイテム数検索を行う（小カテゴリ、カテゴリなし）.
+	 * ブランド完全一致アイテム数検索.
 	 * 
 	 * @param brand
 	 *            検索キーとなるブランド
