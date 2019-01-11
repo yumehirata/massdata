@@ -513,8 +513,7 @@ public class ItemRepository {
 
 		String sql = "select id ,name ,condition,category,brand,price,shipping,description " + "FROM items "
 				+ "WHERE brand ILIKE :brand " + "ORDER BY id " + "OFFSET :beginNumber LIMIT 30";
-		SqlParameterSource param = new MapSqlParameterSource().addValue("brand", brand).addValue("beginNumber",
-				beginNumber);
+		SqlParameterSource param = new MapSqlParameterSource().addValue("brand", brand).addValue("beginNumber",beginNumber);
 
 		List<Item> itemList = template.query(sql, param, ITEM_ROW_MAPPER);
 		return itemList;
