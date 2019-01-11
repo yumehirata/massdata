@@ -3,6 +3,7 @@ package jp.co.rakus.controller;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttributes;
 
@@ -26,8 +27,8 @@ public class LoginController {
 	 * @param error	エラーチェック
 	 * @return	ログイン画面
 	 */
-	@RequestMapping("/toLogin")
-	public String toLogin(Model model, @RequestParam(required = false )String error) {
+	@RequestMapping(value="/toLogin", method = RequestMethod.GET)
+	public String toLogin(Model model, @RequestParam(required = false) String error) {
 		if(error != null) {
 			model.addAttribute("loginError","名前またはパスワードが不正です");
 		}

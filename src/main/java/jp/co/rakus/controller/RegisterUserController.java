@@ -2,7 +2,11 @@ package jp.co.rakus.controller;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 
@@ -23,6 +27,9 @@ public class RegisterUserController {
 	@Autowired
 	private UserRepository userRepository;
 	
+	@Autowired
+	private PasswordEncoder passwordEncoder;
+	
 	@ModelAttribute
 	public UserForm setUpUserForm() {
 		return new UserForm();
@@ -34,7 +41,7 @@ public class RegisterUserController {
 	 * @return	ユーザー登録画面
 	 */
 	@RequestMapping("/toRegister")
-	public String toRegisterUser() {
+	public String toRegisterUser(Model model) {
 		return "registerUser";
 	}
 	
@@ -43,17 +50,32 @@ public class RegisterUserController {
 	 * 
 	 * @return	ログイン画面
 	 */
-	@RequestMapping("/Register")
-	public String register(UserForm form) {
+	@RequestMapping("/register")
+	public String register(@Validated UserForm form,BindingResult result,Model model) {
+		if(result.hasErrors()) {
+			return toRegisterUser(model);
+		}
 		
-		User user = new User();
-		BeanUtils.copyProperties(form, user);
+		User checkUser = userRepository.findByName(form.getName());
+		
+		if(checkUser != null) {
+			result.rejectValue("name", null, "このアドレスは既に登録されています");
+		}
+		if(result.hasErrors()) {
+			return toRegisterUser(model);
+		}
+		
+		User insertUser= new User();
+		BeanUtils.copyProperties(form, insertUser);
 		//TODO　パスワードのハッシュ化
+		String rawPassword = form.getPassword();
+		String encodePassword = passwordEncoder.encode(rawPassword);
+		insertUser.setPassword(encodePassword);
 		//TODO　権限の設定
 		
-		userRepository.insert(user);
+		userRepository.insert(insertUser);
 		
-		return "login";
+		return "redirect:/user/toLogin";
 	}
 
 }

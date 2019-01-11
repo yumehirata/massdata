@@ -14,7 +14,6 @@ $('.toDetail').on('click',function(){
         
     // URLを取得
     var file_url = location.href;
-    alert(file_url);
 
     $.cookie('url',file_url, { path: COOKIE_PATH, expires: date });
 
@@ -24,7 +23,6 @@ $('.backList').on('click',function(){
 	$.cookie.json = true;
 	
     var backURL = $.cookie('url');
-    alert(backURL);
  
     if(backURL!=null){
     	location.href = backURL;

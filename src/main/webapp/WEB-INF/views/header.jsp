@@ -1,6 +1,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib uri="http://www.springframework.org/tags/form" prefix="form"%>
+<%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -37,10 +38,25 @@
     <div id="navbar" class="collapse navbar-collapse">
       <div>
         <ul class="nav navbar-nav navbar-right">
-          <li><a id="logout" href="./login.html">Logout&nbsp;<i class="fa fa-power-off"></i></a></li>
+        
+        	<sec:authorize access="hasRole('ROLE_MEMBER') and isAuthenticated()">
+				<sec:authentication var="userName" property="principal.user.name" />
+			</sec:authorize>
+			
+			<c:choose>
+				<c:when test="${userName == null}">
+      			    <li><a id="login" href="${pageContext.request.contextPath}/user/toLogin">Login&nbsp;<i class="fa fa-power-off"></i></a></li>
+				</c:when>
+				<c:otherwise>
+					<li><a href="${pageContext.request.contextPath}/user/logout" class="navbar-link">ログアウト</a>
+				</c:otherwise>
+			</c:choose>
+        
         </ul>
         <p class="navbar-text navbar-right">
-          <span id="loginName">user: userName</span>
+        	<c:if test="${userName!=null}">
+          		<span id="loginName">user: <c:out value="${userName}"/></span>
+          	</c:if>
         </p>
       </div>
     </div>
