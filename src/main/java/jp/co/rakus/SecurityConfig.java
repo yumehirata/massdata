@@ -25,6 +25,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 	
 	@Autowired
 	private UserDetailsService userDetailsService;
+	@Autowired
+	private MyLogoutHandler myLogoutHandler;
 	
 	/* 
 	 * css,imgなどのセキュリティ設定を無視する.
@@ -51,6 +53,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 			.loginPage("/user/toLogin")
 			.loginProcessingUrl("/user/login")
 			.failureUrl("/user/toLogin?error=true")
+			.successForwardUrl("/user/writeLog")
 			.defaultSuccessUrl("/item/list",false)
 			.usernameParameter("name")
 			.passwordParameter("password");
@@ -58,6 +61,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter{
 		http.logout()
 			.logoutRequestMatcher(new AntPathRequestMatcher("/user/logout"))
 			.logoutSuccessUrl("/item/list")
+			.addLogoutHandler(myLogoutHandler)
 			.deleteCookies("JSESSIONID")
 			.invalidateHttpSession(true);
 		
