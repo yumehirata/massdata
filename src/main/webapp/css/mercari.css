@@ -24,6 +24,10 @@ table#item-table{
   margin-bottom: 0;
 }
 
+div#downloadListButton{
+  text-align: right;
+}
+
 /* detail.html */
 div#details{
   margin: 2em 0 2em;

@@ -100,9 +100,9 @@
 			  </td>
 			  <td>
 				<a href="${pageContext.request.contextPath}/item/search?largeCategory=<c:out value="${item.largeCategory.id}"/>"><c:out value="${item.largeCategory.name}"/></a>
-				<c:if test="${item.smallCategory!=null}"><c:out value=" / "/></c:if>
+				<c:if test="${item.largeCategory.name!=null}"><c:out value=" / "/></c:if>
 				<a href="${pageContext.request.contextPath}/item/search?middleCategory=<c:out value="${item.middleCategory.id}"/>"><c:out value="${item.middleCategory.name}"/></a>
-				<c:if test="${item.smallCategory!=null}"><c:out value=" / "/></c:if>
+				<c:if test="${item.largeCategory.name!=null}"><c:out value=" / "/></c:if>
 				<a href="${pageContext.request.contextPath}/item/search?smallCategory=<c:out value="${item.smallCategory.id}"/>"><c:out value="${item.smallCategory.name}"/></a>
 			 </td>
 			 <td>
@@ -115,6 +115,11 @@
 	 	  </c:forEach>
         </tbody>
       </table>
+    </div>
+
+    <!-- ダウンロード -->
+    <div id="downloadListButton">
+      <a class="btn btn-default toDetail" href="${pageContext.request.contextPath}/dl/itemlist?pageNumber=<c:out value="${pageNumber}"/>"><i class="fa fa-download" aria-hidden="true"></i> Download This List </a>
     </div>
 
     <!-- pagination -->
@@ -148,7 +153,7 @@
       <!-- ページ番号を指定して表示するフォーム -->
       <div id="select-page">
 
-        <form action="${pageContext.request.contextPath}/item/<c:if test="${pageLimit==49418}">list</c:if><c:if test="${pageLimit!=49418}">search</c:if>" class="form-inline" id="fromSearch">
+        <form action="${pageContext.request.contextPath}/item/<c:if test="${pageLimit>=49418}">list</c:if><c:if test="${pageLimit<49418}">search</c:if>" class="form-inline" id="fromSearch">
           <div class="form-group">
             <div class="input-group col-xs-6">
               <label></label>
@@ -171,6 +176,9 @@
       
       </div>
     </div>
+    
+
+    
   </div>
 
 
