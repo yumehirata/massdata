@@ -2,8 +2,6 @@ package jp.co.rakus.controller;
 
 import java.util.List;
 
-import javax.servlet.http.HttpSession;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -11,7 +9,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import jp.co.rakus.domain.Category;
 import jp.co.rakus.domain.Item;
-import jp.co.rakus.repository.CategoryRepository;
 import jp.co.rakus.service.SearchItemService;
 
 /**
@@ -24,10 +21,6 @@ import jp.co.rakus.service.SearchItemService;
 @RequestMapping("/item")
 public class SearchItemController {
 
-	@Autowired
-	private HttpSession session;
-	@Autowired
-	private CategoryRepository categoryRepository;
 	@Autowired
 	private SearchItemService searchItemService;
 
@@ -56,77 +49,24 @@ public class SearchItemController {
 	public String search(String name, Integer largeCategory, Integer middleCategory, Integer smallCategory,
 			String brand, Model model, Integer pageNumber, boolean isBrandSearch) {
 
-		if (pageNumber == null || pageNumber == 0) {
-			pageNumber = 1;
-		} else {
-
-			if (name == null && session.getAttribute("name") != null) {
-				name = session.getAttribute("name").toString();
-			}
-			if (brand == null && session.getAttribute("brand") != null) {
-				brand = session.getAttribute("brand").toString();
-			}
-			if (largeCategory == null && session.getAttribute("largeCategory") != null) {
-				largeCategory = Integer.parseInt(session.getAttribute("largeCategory").toString());
-			}
-			if (middleCategory == null && session.getAttribute("middleCategory") != null) {
-				middleCategory = Integer.parseInt(session.getAttribute("middleCategory").toString());
-			}
-			if (smallCategory == null && session.getAttribute("smallCategory") != null) {
-				smallCategory = Integer.parseInt(session.getAttribute("smallCategory").toString());
-			}
-			if (isBrandSearch == false && session.getAttribute("isBrandSearch") != null) {
-				isBrandSearch = Boolean.valueOf(session.getAttribute("isBrandSearch").toString());
-			}
-		}
-		session.setAttribute("name", name);
-		session.setAttribute("brand", brand);
-		session.setAttribute("largeCategory", largeCategory);
-		session.setAttribute("middleCategory", middleCategory);
-		session.setAttribute("smallCategory", smallCategory);
-		session.setAttribute("isBrandSearch", isBrandSearch);
-
+		pageNumber = searchItemService.checkArgument(name, smallCategory, middleCategory, largeCategory, brand, pageNumber, isBrandSearch);
+		
 		if ((name == null || name.equals("")) && largeCategory == null && middleCategory == null
 				&& smallCategory == null && (brand == null || brand.equals(""))) {
 			return "forward:/item/list";
 		}
 
-		Integer beginNumber = pageNumber * 30 - 30;
+		List<Item> itemList = searchItemService.searchItem(name, smallCategory, middleCategory, largeCategory, brand, pageNumber, isBrandSearch);
+		int pageLimit = searchItemService.forPageLimit(name, smallCategory, middleCategory, largeCategory, brand, isBrandSearch);
 
-		List<Item> itemList;
-		Integer category = null;
-		int pageLimit;
-
-		List<Category> largeCategoryList = categoryRepository.findLargeAll();
-		model.addAttribute("largeCategoryList", largeCategoryList);
-
-		if (largeCategory != null || middleCategory!= null || smallCategory!=null) {
-			category = smallCategory;
-			pageLimit = (int) Math.ceil((double) searchItemService.searchItemNumberUsingCategory(name, largeCategory,
-					middleCategory, smallCategory, brand) / 30);
-			itemList = searchItemService.searchItemUsingCategory(name, largeCategory, middleCategory, smallCategory,
-					brand, beginNumber);
-
-		} else {
-			pageLimit = (int) Math
-					.ceil((double) searchItemService.searchItemNumberNoCategory(name, category, brand) / 30);
-			itemList = searchItemService.searchItemNoCategory(name, category, brand, beginNumber);
-
-			if (isBrandSearch == true) {
-				pageLimit = (int) Math.ceil((double) searchItemService.searchItemNumberForBrand(brand) / 30);
-				itemList = searchItemService.searchItemForBrand(brand, beginNumber);
-			}
-		}
-
-		if (pageNumber > pageLimit) {
-			pageNumber = pageLimit;
-		} else if (pageNumber < 1) {
-			pageNumber = 1;
-		}
+		searchItemService.checkPageNumber(pageNumber, pageLimit);
+		
+		List<Category> largeCategoryList = searchItemService.forCategorySelect();
 
 		model.addAttribute("itemList", itemList);
 		model.addAttribute("pageLimit", pageLimit);
 		model.addAttribute("pageNumber", pageNumber);
+		model.addAttribute("largeCategoryList", largeCategoryList);
 
 		return "itemList";
 	}

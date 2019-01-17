@@ -37,8 +37,8 @@ public class ShowItemListController {
 	@RequestMapping("/list")
 	public String itemList(Integer pageNumber, Model model) {
 
-		int pageLimit = (int) Math.ceil((double) itemRepository.findAllPageNumber() / 30);
-		if (pageNumber == null || pageNumber ==0 || pageNumber < 1) {
+		int pageLimit = (int) Math.ceil((double) itemRepository.findAllAmount() / 30);
+		if (pageNumber == null || pageNumber < 1) {
 			pageNumber = 1;
 		}else if(pageNumber > pageLimit) {
 			pageNumber = pageLimit;

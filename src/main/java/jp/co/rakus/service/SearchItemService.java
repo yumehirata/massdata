@@ -2,9 +2,12 @@ package jp.co.rakus.service;
 
 import java.util.List;
 
+import javax.servlet.http.HttpSession;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import jp.co.rakus.domain.Category;
 import jp.co.rakus.domain.Item;
 import jp.co.rakus.repository.CategoryRepository;
 import jp.co.rakus.repository.ItemRepository;
@@ -22,147 +25,220 @@ public class SearchItemService {
 	private ItemRepository itemRepository;
 	@Autowired
 	private CategoryRepository categoryRepository;
-
+	@Autowired
+	private HttpSession session;
+	
 	/**
-	 * カテゴリ不使用時のアイテム数検索.
+	 * ページ遷移用引数チェック
 	 * 
-	 * @param name
-	 *            検索キーとなるアイテム名
-	 * @param brand
-	 *            検索キーとなるブランド
-	 * @param beginNumber
-	 *            検索開始番号
-	 * @return アイテム一覧
+	 * @param name	アイテム名
+	 * @param smallCategory	小カテゴリID
+	 * @param middleCategory	中カテゴリID
+	 * @param largeCategory	大カテゴリID
+	 * @param brand	ブランド名
+	 * @param pageNumber	現在位置
+	 * @param isBrandSearch	ブランド検索
 	 */
-	public List<Item> searchItemNoCategory(String name, Integer category, String brand, Integer beginNumber) {
+	public Integer checkArgument(String name,Integer smallCategory, Integer middleCategory,Integer largeCategory,String brand,Integer pageNumber, boolean isBrandSearch) {
+		if (pageNumber == null || pageNumber == 0) {
+			pageNumber = 1;
+		} else {
 
-		List<Item> itemList;
-
-		itemList = itemRepository.findByNameAndBrand(name, brand, beginNumber);
-
-		for (Item preItem : itemList) {
-			Item item = itemRepository.findByIdHasCategory(preItem.getId());
-
-			Item forCategory = categoryRepository.findBySmallCategoryId(item.getCategory());
-			if (forCategory != null) {
-				preItem.setLargeCategory(forCategory.getLargeCategory());
-				preItem.setMiddleCategory(forCategory.getMiddleCategory());
-				preItem.setSmallCategory(forCategory.getSmallCategory());
+			if (name == null && session.getAttribute("name") != null) {
+				name = session.getAttribute("name").toString();
+			}
+			if (brand == null && session.getAttribute("brand") != null) {
+				brand = session.getAttribute("brand").toString();
+			}
+			if (largeCategory == null && session.getAttribute("largeCategory") != null) {
+				largeCategory = Integer.parseInt(session.getAttribute("largeCategory").toString());
+			}
+			if (middleCategory == null && session.getAttribute("middleCategory") != null) {
+				middleCategory = Integer.parseInt(session.getAttribute("middleCategory").toString());
+			}
+			if (smallCategory == null && session.getAttribute("smallCategory") != null) {
+				smallCategory = Integer.parseInt(session.getAttribute("smallCategory").toString());
+			}
+			if (isBrandSearch == false && session.getAttribute("isBrandSearch") != null) {
+				isBrandSearch = Boolean.valueOf(session.getAttribute("isBrandSearch").toString());
 			}
 		}
-
-		return itemList;
-	}
-
-	/**
-	 * カテゴリ不使用時のアイテム数検索.
-	 * 
-	 * @param name
-	 *            検索キーとなるアイテム名
-	 * @param brand
-	 *            検索キーとなるブランド
-	 * @param beginNumber
-	 *            検索開始番号
-	 * @return アイテム数
-	 */
-	public int searchItemNumberNoCategory(String name, Integer category, String brand) {
-
-		int pageNumber = itemRepository.findByNameAndBrandPageNumber(name, brand);
-
+		session.setAttribute("name", name);
+		session.setAttribute("brand", brand);
+		session.setAttribute("largeCategory", largeCategory);
+		session.setAttribute("middleCategory", middleCategory);
+		session.setAttribute("smallCategory", smallCategory);
+		session.setAttribute("isBrandSearch", isBrandSearch);
+		
 		return pageNumber;
 	}
-
+	
 	/**
-	 * カテゴリ使用時のアイテム検索.
+	 * ページ位置の設定.
 	 * 
-	 * @param name
-	 *            アイテム名
-	 * @param largeCategory
-	 *            大カテゴリID
-	 * @param middleCategory
-	 *            中カテゴリID
-	 * @param smallCategory
-	 *            小カテゴリID
-	 * @param brand
-	 *            ブランド名
-	 * @param beginNumber
-	 *            検索開始位置
-	 * @return アイテム一覧
+	 * @param pageNumber	現在位置
+	 * @param pageLimit	ページ上限
 	 */
-	public List<Item> searchItemUsingCategory(String name, Integer largeCategory, Integer middleCategory,
-			Integer smallCategory, String brand, Integer beginNumber) {
-		List<Item> itemList = itemRepository.findByNameAndCategoryAndBrand(name, largeCategory, middleCategory,
-				smallCategory, brand, beginNumber);
-
-		return itemList;
+	public void checkPageNumber(Integer pageNumber,Integer pageLimit) {
+		if (pageNumber > pageLimit) {
+			pageNumber = pageLimit;
+		} else if (pageNumber < 1) {
+			pageNumber = 1;
+		}
 	}
-
+	
 	/**
-	 * カテゴリ使用時のアイテム検索.
+	 * カテゴリ選択用のカテゴリリスト.
 	 * 
-	 * @param name
-	 *            アイテム名
-	 * @param largeCategory
-	 *            大カテゴリID
-	 * @param middleCategory
-	 *            中カテゴリID
-	 * @param smallCategory
-	 *            小カテゴリID
-	 * @param brand
-	 *            ブランド名
-	 * @return アイテム数
+	 * @return	カテゴリリスト.
 	 */
-	public Integer searchItemNumberUsingCategory(String name, Integer largeCategory, Integer middleCategory,
-			Integer smallCategory, String brand) {
-		int pageNumber = itemRepository.findByNameAndCategoryAndBrandPageNumber(name, largeCategory, middleCategory,
-				smallCategory, brand);
-
-		return pageNumber;
-
+	public List<Category> forCategorySelect() {
+		List<Category> largeCategoryList = categoryRepository.findLargeAll();
+		return largeCategoryList;
 	}
-
+	
 	/**
-	 * ブランド完全一致検索.
+	 * アイテムを各種検索する.
 	 * 
-	 * @param brand
-	 *            検索キーとなるブランド名
-	 * @param beginNumber
-	 *            検索開始番号
-	 * @return アイテム一覧
+	 * @param name	アイテム名
+	 * @param smallCategory	小カテゴリID
+	 * @param middleCategory	中カテゴリID
+	 * @param largeCategory	大カテゴリID
+	 * @param brand	ブランド名
+	 * @param pageNumber	現在位置
+	 * @param isBrandSearch	ブランド検索
+	 * @return	アイテムリスト
 	 */
-	public List<Item> searchItemForBrand(String brand, Integer beginNumber) {
-
-		List<Item> itemList;
-
-		itemList = itemRepository.findByBrandCompletely(brand, beginNumber);
-
-		for (Item preItem : itemList) {
-			Item item = itemRepository.findByIdHasCategory(preItem.getId());
-
-			Item forCategory = categoryRepository.findBySmallCategoryId(item.getCategory());
-			if (forCategory != null) {
-				preItem.setLargeCategory(forCategory.getLargeCategory());
-				preItem.setMiddleCategory(forCategory.getMiddleCategory());
-				preItem.setSmallCategory(forCategory.getSmallCategory());
-			}
+	public List<Item> searchItem(String name,Integer smallCategory, Integer middleCategory,Integer largeCategory,String brand,Integer pageNumber, boolean isBrandSearch){
+		Integer beginNumber = pageNumber * 30 - 30;
+		if(isBrandSearch==true) {
+			return itemRepository.findByBrandCompletely(brand, beginNumber);
 		}
 
-		return itemList;
+		if((name==null&&brand==null )||( name.equals("")&&brand.equals(""))) {
+			if(hasCategory(smallCategory)){
+				return itemRepository.findBySmallCategory(smallCategory, beginNumber);
+			}
+			if(hasCategory(middleCategory)) {
+				return itemRepository.findByMiddleCategory(middleCategory, beginNumber);
+			}
+			return itemRepository.findByLargeCategory(largeCategory, beginNumber);			
+		}
+		if(name==null||name.equals("")) {
+			if(hasCategory(smallCategory)) {
+				return itemRepository.findBySmallCategoryAndBrand(smallCategory, brand, beginNumber);
+			}
+			if(hasCategory(middleCategory)) {
+				return itemRepository.findByMiddleCategoryAndBrand(middleCategory, brand, beginNumber);
+			}
+			if(hasCategory(largeCategory)) {
+				return itemRepository.findByLargeCategoryAndBrand(largeCategory, brand, beginNumber);				
+			}
+			return itemRepository.findByBrand(brand, beginNumber);
+		}
+		if(brand==null||brand.equals("")) {
+			if(hasCategory(smallCategory)) {
+				return itemRepository.findByNameAndSmallCategory(name, smallCategory, beginNumber);
+			}
+			if(hasCategory(middleCategory)) {
+				return itemRepository.findByNameAndMiddleCategory(name, middleCategory, beginNumber);
+			}
+			if(hasCategory(largeCategory)) {
+				return itemRepository.findByNameAndLargeCategory(name, largeCategory, beginNumber);				
+			}
+			return itemRepository.findByName(name, beginNumber);
+		}
+		if(hasCategory(smallCategory)) {
+			return itemRepository.findByNameAndSmallCategoryAndBrand(name, smallCategory, brand, beginNumber);
+		}
+		if(hasCategory(middleCategory)) {
+			return itemRepository.findByNameAndMiddleCategoryAndBrand(name, middleCategory, brand, beginNumber);
+		}
+		if(hasCategory(largeCategory)) {
+			return itemRepository.findByNameAndLargeCategoryAndBrand(name, largeCategory, brand, beginNumber);			
+		}
+		return itemRepository.findByNameAndBrand(name, brand, beginNumber);
 	}
 
 	/**
-	 * ブランド完全一致アイテム数検索.
+	 * 指定カテゴリが存在するかチェックするメソッド.
 	 * 
-	 * @param brand
-	 *            検索キーとなるブランド
-	 * @param beginNumber
-	 *            検索開始番号
-	 * @return アイテム数
+	 * @param category	カテゴリID
+	 * @return	if文の条件式
 	 */
-	public int searchItemNumberForBrand(String brand) {
-
-		int pageNumber = itemRepository.findByBrandCompletelyPageNumber(brand);
-
-		return pageNumber;
+	private boolean hasCategory(Integer category) {
+		return category!=null;
 	}
+	
+	/**
+	 * ページ上限を取得する.
+	 * 
+	 * @param name	アイテム名
+	 * @param smallCategory	小カテゴリID
+	 * @param middleCategory	中カテゴリID
+	 * @param largeCategory	大カテゴリID
+	 * @param brand	ブランド名
+	 * @param isBrandSearch	ブランド検索
+	 * @return
+	 */
+	public Integer forPageLimit(String name,Integer smallCategory, Integer middleCategory,Integer largeCategory,String brand, boolean isBrandSearch) {
+		if(isBrandSearch==true) {
+			return setPageLimit(itemRepository.findAmountByBrandCompletely(brand));
+		}
+		
+		if((name==null&&brand==null )||( name.equals("")&&brand.equals(""))) {
+			if(hasCategory(smallCategory)){
+				return setPageLimit(itemRepository.findAmountBySmallCategory(smallCategory));
+			}
+			if(hasCategory(middleCategory)) {
+				return setPageLimit(itemRepository.findAmountByMiddleCategory(middleCategory));
+			}
+			return setPageLimit(itemRepository.findAmountByLargeCategory(largeCategory));
+		}
+		if(name==null||name.equals("")) {
+			if(hasCategory(smallCategory)) {
+				return setPageLimit(itemRepository.findAmountBySmallCategoryAndBrand(smallCategory, brand));
+			}
+			if(hasCategory(middleCategory)) {
+				return setPageLimit(itemRepository.findAmountByMiddleCategoryAndBrand(middleCategory, brand));
+			}
+			if(hasCategory(largeCategory)) {
+				return setPageLimit(itemRepository.findAmountByLargeCategoryAndBrand(largeCategory, brand));
+			}
+			return setPageLimit(itemRepository.findAmountByBrand(brand));
+		}
+		if(brand==null||brand.equals("")) {
+			if(hasCategory(smallCategory)) {
+				return setPageLimit(itemRepository.findAmountByNameAndSmallCategory(name, smallCategory));
+			}
+			if(hasCategory(middleCategory)) {
+				return setPageLimit(itemRepository.findAmountByNameAndMiddleCategory(name, middleCategory));
+			}
+			if(hasCategory(largeCategory)) {
+				return setPageLimit(itemRepository.findAmountByNameAndLargeCategory(name, largeCategory));
+			}
+			return setPageLimit(itemRepository.findAmountByName(name));
+		}
+		if(hasCategory(smallCategory)) {
+			return setPageLimit(itemRepository.findAmountByNameAndSmallCategoryAndBrand(name, smallCategory, brand));
+		}
+		if(hasCategory(middleCategory)) {
+			return setPageLimit(itemRepository.findAmountByNameAndMiddleCategoryAndBrand(name, middleCategory, brand));
+		}
+		if(hasCategory(largeCategory)) {
+			return setPageLimit(itemRepository.findAmountByNameAndLargeCategoryAndBrand(name, largeCategory, brand));			
+		}
+		return setPageLimit(itemRepository.findAmountByNameAndBrand(name, brand));
+	}
+
+	/**
+	 * ページ上限を設定する.
+	 * 
+	 * @param itemAmount	アイテム数
+	 * @return	ページ上限
+	 */
+	private int setPageLimit(Integer itemAmount) {
+		return (int)Math.ceil((double)itemAmount / 30);
+	}
+
 }

@@ -32,7 +32,13 @@
           </tr>
           <tr>
             <th>category</th>
-            <td><c:out value="${item.largeCategory.name}"/> / <c:out value="${item.middleCategory.name}"/> / <c:out value="${item.smallCategory.name}"/></td>
+            <td>
+				<c:out value="${item.largeCategory.name}"/>
+				<c:if test="${item.largeCategory.name!=null}"><c:out value=" / "/></c:if>
+            	<c:out value="${item.middleCategory.name}"/>
+				<c:if test="${item.largeCategory.name!=null}"><c:out value=" / "/></c:if>
+				<c:out value="${item.smallCategory.name}"/>
+            </td>
           </tr>
           <tr>
             <th>brand</th>
