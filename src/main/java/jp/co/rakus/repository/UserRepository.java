@@ -18,6 +18,9 @@ public class UserRepository {
 	@Autowired
 	private NamedParameterJdbcTemplate template;
 	
+	/**
+	 * アイテムに関するROWMAPPER.
+	 */
 	private final static RowMapper<User> USER_ROW_MAPPER = (rs,i) ->{
 		User user = new User();
 		user.setId(rs.getInt("id"));
@@ -35,6 +38,7 @@ public class UserRepository {
 	public void insert(User user) {
 		String sql = "INSERT INTO users(name,password,authority) VALUES(:name,:password,:authority)";
 		SqlParameterSource param = new BeanPropertySqlParameterSource(user);
+		
 		template.update(sql, param);
 	}
 	

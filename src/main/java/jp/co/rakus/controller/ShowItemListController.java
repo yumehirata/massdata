@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import jp.co.rakus.domain.Category;
 import jp.co.rakus.domain.Item;
-import jp.co.rakus.repository.CategoryRepository;
-import jp.co.rakus.repository.ItemRepository;
+import jp.co.rakus.service.SearchItemService;
+import jp.co.rakus.service.ShowItemService;
 
 /**
  * アイテム一覧表示に関するコントローラー.
@@ -23,10 +23,10 @@ import jp.co.rakus.repository.ItemRepository;
 public class ShowItemListController {
 
 	@Autowired
-	private ItemRepository itemRepository;
+	private SearchItemService searchItemService;
 	@Autowired
-	private CategoryRepository categoryRepository;
-
+	private ShowItemService showItemService;
+	
 	/**
 	 * アイテム一覧を表示する.
 	 * 
@@ -35,20 +35,21 @@ public class ShowItemListController {
 	 * @return	アイテム一覧画面
 	 */
 	@RequestMapping("/list")
-	public String itemList(Integer pageNumber, Model model) {
+	public String itemList(Integer pageNumber,String message, Model model) {
 
-		int pageLimit = (int) Math.ceil((double) itemRepository.findAllAmount() / 30);
+		int pageLimit = showItemService.setPageLimit();
 		if (pageNumber == null || pageNumber < 1) {
 			pageNumber = 1;
 		}else if(pageNumber > pageLimit) {
 			pageNumber = pageLimit;
 		}
 
-		Integer beginNumber = pageNumber * 30 - 30;
-		List<Item> itemList = itemRepository.findAllForPaging(beginNumber);
+		List<Item> itemList = showItemService.itemList(pageNumber);
+		List<Category> largeCategoryList = searchItemService.forCategorySelect();
 
-		List<Category> largeCategoryList = categoryRepository.findLargeAll();
-
+		if(message!=null) {
+			model.addAttribute("message",message);
+		}
 		model.addAttribute("itemList", itemList);
 		model.addAttribute("pageLimit", pageLimit);
 		model.addAttribute("pageNumber", pageNumber);

@@ -6,13 +6,25 @@ import java.util.Date;
 
 import org.springframework.stereotype.Service;
 
+/**
+ * ログイン/アウトの記録をcsvに吐き出す.
+ * 
+ * @author yume.hirata
+ *
+ */
 @Service
 public class LoginLogService {
 
+	/**
+	 * ログインの記録を指定csvに吐く.
+	 * 
+	 * @param name	ログイン者名
+	 */
 	public void loginLog(String name) {
 
 		Date date = new Date();
 		String fileName="massdata_log";
+		
 		try {
 			FileWriter fw = new FileWriter("C:\\env\\spring-workspace\\"+ fileName + ".csv",true);
 			fw.write("login");
@@ -27,9 +39,15 @@ public class LoginLogService {
 		}
 	}
 	
+	/**
+	 * ログアウトの記録を指定csvに吐く.
+	 * 
+	 * @param name	ログイン者名
+	 */
 	public void logoutLog(String name) {
 		Date date = new Date();
 		String fileName="massdata_log";
+		
 		try {
 			FileWriter fw = new FileWriter("C:\\env\\spring-workspace\\"+ fileName + ".csv",true);
 			fw.write("logout");

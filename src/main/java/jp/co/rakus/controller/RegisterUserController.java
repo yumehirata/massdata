@@ -67,11 +67,12 @@ public class RegisterUserController {
 		
 		User insertUser= new User();
 		BeanUtils.copyProperties(form, insertUser);
-		//TODO　パスワードのハッシュ化
+
 		String rawPassword = form.getPassword();
 		String encodePassword = passwordEncoder.encode(rawPassword);
+		
 		insertUser.setPassword(encodePassword);
-		//TODO　権限の設定
+		insertUser.setAuthority(1); //仮権限
 		
 		userRepository.insert(insertUser);
 		

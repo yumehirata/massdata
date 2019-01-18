@@ -11,7 +11,6 @@ import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.stereotype.Repository;
 
 import jp.co.rakus.domain.Category;
-import jp.co.rakus.domain.Item;
 
 /**
  * Categoryテーブルを操作するリポジトリ.
@@ -37,30 +36,7 @@ public class CategoryRepository {
 
 		return category;
 	};
-	
-	private final static RowMapper<Item> FORITEM_CATEGORY_ROW_MAPPER = (rs,i) -> {
-		Item item = new Item();
-		
-		Category smallCategory = new Category();
-		smallCategory.setId(rs.getInt("sc_id"));
-		smallCategory.setName(rs.getString("sc_name"));
-		smallCategory.setParent(rs.getInt("sc_parent"));
-		smallCategory.setNameAll(rs.getString("sc_name_all"));
-		item.setSmallCategory(smallCategory);
 
-		Category middleCategory = new Category();
-		middleCategory.setId(rs.getInt("mc_id"));
-		middleCategory.setName(rs.getString("mc_name"));
-		middleCategory.setParent(rs.getInt("mc_parent"));
-		item.setMiddleCategory(middleCategory);
-
-		Category largeCategory = new Category();
-		largeCategory.setId(rs.getInt("lc_id"));
-		largeCategory.setName(rs.getString("lc_name"));
-		item.setLargeCategory(largeCategory);
-
-		return item;
-	};
 
 	/**
 	 * Categoryをインサートする.
@@ -140,25 +116,6 @@ public class CategoryRepository {
 	}
 	
 	/**
-	 * カテゴリIDからカテゴリを検索する.
-	 * 
-	 * @param id	検索キーとなるカテゴリ名
-	 * @return	カテゴリ
-	 */
-	public Category findById(Integer id){
-		String sql = "SELECT name_all, id, parent, name FROM category WHERE id = :id";
-		SqlParameterSource param = new MapSqlParameterSource().addValue("id", id);
-		
-		List<Category> categoryList = template.query(sql,param,CATEGORY_ROW_MAPPER);
-		
-		if(categoryList.size() == 0) {
-			return null;
-		}
-		
-		return categoryList.get(0);
-	}
-	
-	/**
 	 * 大カテゴリ一覧を検索する.
 	 * 
 	 * @return	大カテゴリ一覧
@@ -184,21 +141,4 @@ public class CategoryRepository {
 		return categoryList;
 	}
 	
-	public Item findBySmallCategoryId(Integer id){
-		String sql = "select " + 
-				"sc.id sc_id,sc.name sc_name,sc.parent sc_parent,sc.name_all sc_name_all, " + 
-				"mc.id mc_id,mc.name mc_name,mc.parent mc_parent,lc.id lc_id,lc.name lc_name " + 
-				"FROM category sc " + 
-				"LEFT OUTER JOIN category mc ON sc.parent = mc.id " + 
-				"LEFT OUTER JOIN category lc ON mc.parent = lc.id " + 
-				"WHERE sc.id = :id";
-		SqlParameterSource param = new MapSqlParameterSource().addValue("id", id);
-		
-		List<Item> itemList = template.query(sql, param, FORITEM_CATEGORY_ROW_MAPPER);
-		
-		if(itemList.size()==0) {
-			return null;
-		}
-		return itemList.get(0);
-	}
 }

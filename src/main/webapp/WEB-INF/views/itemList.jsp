@@ -47,6 +47,11 @@
         <button type="submit" class="btn btn-default"><i class="fa fa-angle-double-right"></i> search</button>
       </form>
     </div>
+    
+    
+    <h4 class="notFoundMessage" style="color:maroon">
+	    <c:if test="${message!=null}"><c:out value="${message}"/></c:if>
+    </h4>
 
     <!-- pagination -->
     
@@ -119,7 +124,7 @@
 
     <!-- ダウンロード -->
     <div id="downloadListButton">
-      <a class="btn btn-default toDetail" href="${pageContext.request.contextPath}/dl/itemlist?pageNumber=<c:out value="${pageNumber}"/>"><i class="fa fa-download" aria-hidden="true"></i> Download This List </a>
+      <a class="btn btn-default toDetail" id="downloadButton" href="${pageContext.request.contextPath}/dl/itemlist?pageNumber=<c:out value="${pageNumber}"/>"><i class="fa fa-download" aria-hidden="true"></i> Download This List </a>
     </div>
 
     <!-- pagination -->
@@ -185,6 +190,7 @@
 </body>
  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.js"></script>
  <script src="/js/categorySelect.js"></script>
+ <script src="/js/checkMessage.js"></script>
  <script src="/js/paging.js"></script>
   <script src="/js/backPrePage.js"></script>
 </html>

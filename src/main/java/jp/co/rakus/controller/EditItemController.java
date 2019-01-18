@@ -95,7 +95,7 @@ public class EditItemController {
 
 		item.setId(id);
 		item.setPrice(Double.parseDouble(form.getPrice()));
-		// shippingもセット???
+		
 		item.setShipping(shipping);
 
 		itemRepository.update(item);

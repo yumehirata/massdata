@@ -26,6 +26,14 @@ public class DownloadXlxsController {
 	@Autowired
 	private DownloadXlxsService downloadXlxsService;
 	
+	/**
+	 * 表示しているリストをExcelファイルで出力.
+	 * 
+	 * @param pageNumber	現在ページ
+	 * @param response	書き出し設定
+	 * @throws FileNotFoundException	エラー
+	 * @throws IOException	エラー
+	 */
 	@RequestMapping("/itemlist")
 	public void downloadXlxs(Integer pageNumber,HttpServletResponse response) throws FileNotFoundException,IOException{
 		

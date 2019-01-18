@@ -53,12 +53,18 @@ public class SearchItemController {
 		
 		if ((name == null || name.equals("")) && largeCategory == null && middleCategory == null
 				&& smallCategory == null && (brand == null || brand.equals(""))) {
+			model.addAttribute("message","該当する商品は存在しません");
 			return "forward:/item/list";
 		}
 
 		List<Item> itemList = searchItemService.searchItem(name, smallCategory, middleCategory, largeCategory, brand, pageNumber, isBrandSearch);
-		int pageLimit = searchItemService.forPageLimit(name, smallCategory, middleCategory, largeCategory, brand, isBrandSearch);
 
+		if(itemList.size()==0) {
+			model.addAttribute("message","該当する商品は存在しません");
+			return "forward:/item/list";
+		}
+		
+		int pageLimit = searchItemService.forPageLimit(name, smallCategory, middleCategory, largeCategory, brand, isBrandSearch);
 		searchItemService.checkPageNumber(pageNumber, pageLimit);
 		
 		List<Category> largeCategoryList = searchItemService.forCategorySelect();

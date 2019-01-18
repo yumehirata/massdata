@@ -15,7 +15,7 @@ import jp.co.rakus.repository.ItemRepository;
 import jp.co.rakus.repository.OriginalRepository;
 
 /**
- * DBにデータ挿入用のコントローラー.
+ * DBにデータ挿入用のクラス.
  * 
  * @author yume.hirata
  *
@@ -91,7 +91,6 @@ public class TestController {
 			BeanUtils.copyProperties(original, item);
 			item.setCondition(original.getConditionId());
 
-			// ここでカテ名からidを取ってきてセットする
 			if (original.getCategoryName() != null) {
 				String[] categoryNameArray = original.getCategoryName().split("/");
 				String categoryName= categoryNameArray[0] + "/" + categoryNameArray[1] +"/" + categoryNameArray[2];

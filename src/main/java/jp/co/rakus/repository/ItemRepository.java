@@ -105,6 +105,7 @@ public class ItemRepository {
 	public void insert(Item item) {
 		String sql = "INSERT INTO items(id,name,condition,category,brand,price,shipping,description) VALUES(:id,:name,:condition,:category,:brand,:price,:shipping,:description)";
 		SqlParameterSource param = new BeanPropertySqlParameterSource(item);
+		
 		template.update(sql, param);
 	}
 
@@ -129,6 +130,7 @@ public class ItemRepository {
 	public Integer findAllAmount() {
 		String sql = "SELECT COUNT(*) FROM items";
 		SqlParameterSource param = new MapSqlParameterSource();
+		
 		Integer itemAmount = template.queryForObject(sql, param, Integer.class);
 		return itemAmount;
 	}
@@ -465,7 +467,6 @@ public class ItemRepository {
 		return itemAmount;
 	}
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	/**
 	 * アイテム名あいまい検索で取得したアイテム.

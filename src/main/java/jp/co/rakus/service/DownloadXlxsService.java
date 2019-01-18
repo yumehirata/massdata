@@ -34,7 +34,7 @@ public class DownloadXlxsService {
 	private SearchItemService searchItemService;
 
 	/**
-	 * ダウンロードするアイテムリストを探してくる.
+	 * セッションの情報からダウンロードするアイテムリストを探してくる.
 	 * 
 	 * @param pageNumber
 	 *            現在位置
@@ -49,7 +49,7 @@ public class DownloadXlxsService {
 		Integer smallCategory = null;
 		boolean isBrandSearch = false;
 
-		if (pageNumber == null || pageNumber == 0) {
+		if (pageNumber == null || pageNumber <= 0) {
 			pageNumber = 1;
 		}
 		if (session.getAttribute("name") != null) {
@@ -96,6 +96,7 @@ public class DownloadXlxsService {
 			if (sheet instanceof SXSSFSheet) {
 				((SXSSFSheet) sheet).trackAllColumnsForAutoSizing();
 			}
+			
 			Row row;
 			Cell cell;
 			int rowNumber = 0;

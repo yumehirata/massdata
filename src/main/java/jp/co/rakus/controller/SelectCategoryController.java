@@ -29,7 +29,7 @@ public class SelectCategoryController {
 	private CategoryRepository categoryRepository;
 	
 	/**
-	 * カテゴリIDからその子のカテゴリを検索してプルダウンに表示する.
+	 * カテゴリIDからその下位カテゴリを検索してプルダウンに表示する.
 	 * 
 	 * @param id	検索キーとなる親カテゴリID
 	 * @return	検索されたカテゴリ一覧
